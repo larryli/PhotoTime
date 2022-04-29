@@ -23,7 +23,7 @@ INCLUDE = $(PellesCDir)\Include\Win;$(PellesCDir)\Include#
 LIB = $(PellesCDir)\Lib\Win64;$(PellesCDir)\Lib#
 POC_PROJECT_EXECUTOR = #
 POC_PROJECT_ARGUMENTS = #
-POC_PROJECT_WORKPATH = #
+POC_PROJECT_WORKPATH = .#
 POC_PROJECT_ZIPEXTRA = #
 !elseif "$(POC_PROJECT_MODE)" == "Debug"
 CCFLAGS = -Tx64-coff -Ot -W1 -std:C17 -Ze -Zi -DUNICODE -D_UNICODE#
@@ -40,7 +40,7 @@ INCLUDE = $(PellesCDir)\Include\Win;$(PellesCDir)\Include#
 LIB = $(PellesCDir)\Lib\Win64;$(PellesCDir)\Lib#
 POC_PROJECT_EXECUTOR = #
 POC_PROJECT_ARGUMENTS = #
-POC_PROJECT_WORKPATH = #
+POC_PROJECT_WORKPATH = .#
 POC_PROJECT_ZIPEXTRA = #
 !else
 !error "Unknown mode."
@@ -51,7 +51,12 @@ POC_PROJECT_ZIPEXTRA = #
 # 
 PhotoTime.exe: \
 	output\main.obj \
-	output\main.res
+	output\main.res \
+	output\statusbar.obj \
+	output\toolbar.obj \
+	output\listvisw.obj \
+	output\commctrls.obj \
+	output\about.obj
 	$(LINK) $(LINKFLAGS) -out:"$@" $**
 
 # 
@@ -59,7 +64,12 @@ PhotoTime.exe: \
 # 
 output\main.obj: \
 	main.c \
-	main.h
+	about.h \
+	commctrls.h \
+	listview.h \
+	main.h \
+	statusbar.h \
+	toolbar.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
@@ -67,8 +77,57 @@ output\main.obj: \
 # 
 output\main.res: \
 	main.rc \
+	down.bmp \
 	main.h \
-	main.ico
+	main.ico \
+	toolbar.bmp \
+	up.bmp
 	$(RC) $(RCFLAGS) "$!" -Fo"$@"
 
+# 
+# Build statusbar.obj.
+# 
+output\statusbar.obj: \
+	statusbar.c \
+	main.h
+	$(CC) $(CCFLAGS) "$!" -Fo"$@"
+
+# 
+# Build toolbar.obj.
+# 
+output\toolbar.obj: \
+	toolbar.c \
+	main.h \
+	toolbar.h
+	$(CC) $(CCFLAGS) "$!" -Fo"$@"
+
+# 
+# Build listvisw.obj.
+# 
+output\listvisw.obj: \
+	listvisw.c \
+	commctrls.h \
+	listview.h \
+	main.h
+	$(CC) $(CCFLAGS) "$!" -Fo"$@"
+
+# 
+# Build commctrls.obj.
+# 
+output\commctrls.obj: \
+	commctrls.c \
+	commctrls.h
+	$(CC) $(CCFLAGS) "$!" -Fo"$@"
+
+# 
+# Build about.obj.
+# 
+output\about.obj: \
+	about.c \
+	about.h \
+	main.h
+	$(CC) $(CCFLAGS) "$!" -Fo"$@"
+
 .SILENT:
+
+.EXCLUDEDFILES:

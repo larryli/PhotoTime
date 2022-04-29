@@ -3,61 +3,54 @@
 #include <windowsx.h>
 #include <commctrl.h>
 #include <wchar.h>
+
 #include "main.h"
+
+#include "about.h"
+#include "commctrls.h"
+#include "listview.h"
+#include "toolbar.h"
+#include "statusbar.h"
 
 #define NELEMS(a)  (sizeof(a) / sizeof((a)[0]))
 
+static BOOL InitApplication(HINSTANCE);
+static BOOL InitInstance(HINSTANCE, int);
 static LRESULT WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
-static void Main_OnPaint(HWND);
+static LRESULT Main_OnCreate(HWND, LPCREATESTRUCT);
+static LRESULT Main_OnSize(HWND, int, int, int);
+static void Main_OnLButtonDown(HWND, BOOL, int, int, UINT);
+static void Main_OnLButtonUp(HWND, int, int, UINT);
+static void Main_OnMouseMove(HWND, int, int, UINT);
+static LRESULT Main_OnNotify(HWND, int, NMHDR *);
 static void Main_OnCommand(HWND, int, HWND, UINT);
+static void Main_OnContextMenu(HWND, HWND, UINT, UINT);
 static void Main_OnDestroy(HWND);
-static LRESULT WINAPI AboutDlgProc(HWND, UINT, WPARAM, LPARAM);
 
 static HANDLE ghInstance;
+static HCURSOR ghCurSizeEW, ghCurArrow;
+static HWND ghWndToolBar, ghWndListView, ghWndPhoto, ghWndStatusBar;
+static RECT gRcClient;
+static BOOL bSplitDrag = FALSE;
 
-int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, WCHAR *pszCmdLine, int nCmdShow)
+#define MIN_CX_LISTVIEW 320
+#define MIN_CX_PHOTO 320
+static int cxListView = 0;
+static int cxPhoto = 0;
+
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pszCmdLine, int nCmdShow)
 {
-    INITCOMMONCONTROLSEX icc;
-    WNDCLASS wc;
-    HWND hwnd;
-    MSG msg;
-
     ghInstance = hInstance;
+    ghCurSizeEW = LoadCursor(NULL, IDC_SIZEWE);
+    ghCurArrow = LoadCursor(NULL, IDC_ARROW);
+    if (!hPrevInstance)
+        if (!InitApplication(hInstance))
+            return FALSE;
+    InitCommCtrl();
+    if (!InitInstance(hInstance, nCmdShow))
+        return FALSE;
 
-    icc.dwSize = sizeof(icc);
-    icc.dwICC = ICC_WIN95_CLASSES;
-    InitCommonControlsEx(&icc);
-
-    wc.lpszClassName = L"PhotoTimeClass";
-    wc.lpfnWndProc = MainWndProc;
-    wc.style = CS_OWNDC|CS_VREDRAW|CS_HREDRAW;
-    wc.hInstance = ghInstance;
-    wc.hIcon = LoadIcon(ghInstance, MAKEINTRESOURCE(IDR_ICO_MAIN));
-    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
-    wc.lpszMenuName = MAKEINTRESOURCE(IDR_MNU_MAIN);
-    wc.cbClsExtra = 0;
-    wc.cbWndExtra = 0;
-    if (!RegisterClass(&wc))
-        return 1;
-
-    hwnd = CreateWindow(L"PhotoTimeClass",
-        L"PhotoTime",
-        WS_OVERLAPPEDWINDOW|WS_HSCROLL|WS_VSCROLL,
-        0,
-        0,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        NULL,
-        NULL,
-        ghInstance,
-        NULL
-    );
-    if (!hwnd) return 1;
-
-    ShowWindow(hwnd, nCmdShow);
-    UpdateWindow(hwnd);
-
+    MSG msg;
 #if 0
     /* "Politically correct" code -- SEE MICROSOFT DOCUMENTATION */
     for (;;) {
@@ -74,34 +67,179 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, WCHAR *pszCm
         }
     }
 #else
-    while (GetMessage(&msg, NULL, 0, 0) > 0) {
+    while (GetMessage(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
 #endif
-
     return msg.wParam;
+}
+
+static BOOL InitApplication(HINSTANCE hInstance)
+{
+    WNDCLASSEX wc = {
+        .cbSize = sizeof(WNDCLASSEX),
+        .lpszClassName = L"PhotoTimeClass",
+        .lpfnWndProc = MainWndProc,
+        .style = 0,
+        .hInstance = hInstance,
+        .hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDR_ICO_MAIN)),
+        .hIconSm = LoadImage(hInstance, MAKEINTRESOURCE(IDR_ICO_MAIN), IMAGE_ICON, 16, 16, 0),
+        .hCursor = LoadCursor(NULL, IDC_ARROW),
+        .hbrBackground = (HBRUSH)(COLOR_WINDOW + 1),
+        .lpszMenuName = MAKEINTRESOURCE(IDR_MNU_MAIN),
+        .cbClsExtra = 0,
+        .cbWndExtra = 0,
+    };
+    if (!RegisterClassEx(&wc))
+        return FALSE;
+    return TRUE;
+}
+
+static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
+{
+    TCHAR szTitle[MAX_PATH] = L"PhotoTime";
+    if (!LoadString(hInstance, IDS_APPTITLE, szTitle, NELEMS(szTitle)))
+        return FALSE;
+    HWND hwnd = CreateWindow(L"PhotoTimeClass",
+                             szTitle,
+                             WS_OVERLAPPEDWINDOW,
+                             CW_USEDEFAULT,
+                             CW_USEDEFAULT,
+                             CW_USEDEFAULT,
+                             CW_USEDEFAULT,
+                             NULL,
+                             NULL,
+                             hInstance,
+                             NULL);
+    if (!hwnd)
+        return FALSE;
+
+    ShowWindow(hwnd, nCmdShow);
+    UpdateWindow(hwnd);
+    return TRUE;
 }
 
 static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg) {
-    HANDLE_MSG(hwnd, WM_PAINT, Main_OnPaint);
+    HANDLE_MSG(hwnd, WM_CREATE, Main_OnCreate);
+    HANDLE_MSG(hwnd, WM_SIZE, Main_OnSize);
     HANDLE_MSG(hwnd, WM_COMMAND, Main_OnCommand);
+    HANDLE_MSG(hwnd, WM_CONTEXTMENU, Main_OnContextMenu);
+    HANDLE_MSG(hwnd, WM_NOTIFY, Main_OnNotify);
     HANDLE_MSG(hwnd, WM_DESTROY, Main_OnDestroy);
+    HANDLE_MSG(hwnd, WM_LBUTTONDOWN, Main_OnLButtonDown);
+    HANDLE_MSG(hwnd, WM_LBUTTONUP, Main_OnLButtonUp);
+    HANDLE_MSG(hwnd, WM_MOUSEMOVE, Main_OnMouseMove);
     default:
         return DefWindowProc(hwnd, msg, wParam, lParam);
     }
 }
 
-static void Main_OnPaint(HWND hwnd)
+static LRESULT Main_OnCreate(HWND hwnd, LPCREATESTRUCT lParam)
 {
-    PAINTSTRUCT ps;
-    RECT rc;
+    ghWndToolBar = CreateToolBarWnd(hwnd, ghInstance);
+    TCHAR szReady[MAX_PATH] = L"";
+    if (!LoadString(ghInstance, IDS_READY, szReady, NELEMS(szReady)))
+        return FALSE;
+    ghWndStatusBar = CreateStatusBarWnd(hwnd, szReady);
+    ghWndListView = CreateListViewWnd(hwnd, ghInstance);
+    ghWndPhoto = CreateWindowEx(WS_EX_STATICEDGE,
+                                L"Static",
+                                NULL,
+                                WS_CHILD | WS_VISIBLE,
+                                0, 0, 0, 0,
+                                hwnd,
+                                0,
+                                ghInstance,
+                                NULL);
+    SetFocus(ghWndListView);
+    return TRUE;
+}
 
-    BeginPaint(hwnd, &ps);
-    GetClientRect(hwnd, &rc);
-    EndPaint(hwnd, &ps);
+static BOOL GetRect(HWND hwnd, RECT *p)
+{
+    RECT rc;
+    if (!GetClientRect(hwnd, p))
+        return FALSE;
+    if (!GetWindowRect(ghWndStatusBar, &rc))
+        return FALSE;
+    if (!ScreenToClient(hwnd, (LPPOINT)&rc.left))
+        return FALSE;
+    p->bottom = rc.top;
+    if (!GetWindowRect(ghWndToolBar, &rc))
+        return FALSE;
+    p->top = rc.bottom - rc.top - 3;
+    return TRUE;
+}
+
+static LRESULT Main_OnSize(HWND hwnd, int flag, int x, int y)
+{
+    SendMessage(ghWndToolBar, WM_SIZE, x, y);
+    SendMessage(ghWndStatusBar, WM_SIZE, x, y);
+    SizeStatusPanels(hwnd, ghWndStatusBar);
+
+    if (flag != SIZE_MINIMIZED) {
+        GetRect(hwnd, &gRcClient);
+        LONG cx = gRcClient.right - gRcClient.left;
+        LONG cy = gRcClient.bottom - gRcClient.top;
+        if (cx > MIN_CX_LISTVIEW + MIN_CX_PHOTO + 2) {
+            if (cxListView > cx - MIN_CX_PHOTO - 2) {
+                cxListView = cx - MIN_CX_PHOTO - 2;
+            } else {
+                int cxListViewCur = ListViewGetColumnWidth(ghWndListView);
+                if (cxListView < cxListViewCur && cxListView + cxPhoto < cx - 2) {
+                    cxListView = cx - cxPhoto - 2;
+                    if (cxListView > cxListViewCur)
+                        cxListView = cxListViewCur;
+                }
+            }
+            if (cxListView < MIN_CX_LISTVIEW)
+                cxListView = MIN_CX_LISTVIEW;
+            cxPhoto = cx - cxListView - 2;
+            if (cxPhoto < MIN_CX_PHOTO) {
+                cxPhoto = MIN_CX_PHOTO;
+                cxListView = cx - cxPhoto - 2;
+            }
+        } else {
+            cxListView = cx;
+            cxPhoto = 0;
+        }
+        MoveWindow(ghWndListView, gRcClient.left, gRcClient.top, cxListView, cy, TRUE);
+        MoveWindow(ghWndPhoto, gRcClient.left + cxListView + 2, gRcClient.top, cxPhoto, cy, TRUE);
+    }
+    return 0;
+}
+
+static void Main_OnLButtonDown(HWND hwnd, BOOL fDoubleClick, int x, int y, UINT keyFlags)
+{
+    SetCapture(hwnd);
+    bSplitDrag = TRUE;
+}
+
+static void Main_OnLButtonUp(HWND hwnd, int x, int y, UINT keyFlags)
+{
+    ReleaseCapture();
+    bSplitDrag = FALSE;
+}
+
+static void Main_OnMouseMove(HWND hwnd, int x, int y, UINT keyFlags)
+{
+    if (x > cxListView && x <= cxListView + 2 && y >= gRcClient.top && y <= gRcClient.bottom)
+        SetClassLongPtr(hwnd, GCLP_HCURSOR, (LPARAM)ghCurSizeEW);
+    else
+        SetClassLongPtr(hwnd, GCLP_HCURSOR, (LPARAM)ghCurArrow);
+    if (bSplitDrag) {
+        LONG cx = gRcClient.right - gRcClient.left;
+        LONG cy = gRcClient.bottom - gRcClient.top;
+        if ((x - gRcClient.left > MIN_CX_LISTVIEW + 1) && (x - gRcClient.left < cx - MIN_CX_PHOTO - 1)) {
+            cxListView = x - gRcClient.left - 1;
+            cxPhoto = cx - cxListView - 2;
+            MoveWindow(ghWndListView, gRcClient.left, gRcClient.top, cxListView, cy, TRUE);
+            MoveWindow(ghWndPhoto, gRcClient.left + cxListView + 2, gRcClient.top, cxPhoto, cy, TRUE);
+        }
+    }
 }
 
 static void Main_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
@@ -110,29 +248,53 @@ static void Main_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
     case IDM_ABOUT:
         DialogBox(ghInstance, MAKEINTRESOURCE(DLG_ABOUT), hwnd, (DLGPROC)AboutDlgProc);
         return;
+    case IDM_OPEN:
+        ListView_DeleteAllItems(ghWndListView);
+        ListView_SetItemCount(ghWndListView, 100000);
+        return;
+    case IDM_EXIT:
+        PostMessage(hwnd, WM_CLOSE, 0, 0L);
+        return;
     }
+}
+
+static void Main_OnContextMenu(HWND hwnd, HWND hwndContext, UINT xPos, UINT yPos)
+{
+    if (hwndContext == ghWndListView) {
+        HMENU hMenuLoad = LoadMenu(ghInstance, MAKEINTRESOURCE(IDR_MNU_CONTEXT));
+        HMENU hMenu = GetSubMenu(hMenuLoad, 0);
+
+        TrackPopupMenu(hMenu,
+                       TPM_LEFTALIGN | TPM_RIGHTBUTTON,
+                       xPos, yPos,
+                       0,
+                       hwnd,
+                       NULL);
+
+        DestroyMenu(hMenuLoad);
+    }
+}
+
+static LRESULT Main_OnNotify(HWND hwnd, int wParam, NMHDR *lParam)
+{
+    switch (lParam->code) {
+    case LVN_COLUMNCLICK:
+        ListViewColumnClick(hwnd, (NMLISTVIEW *)lParam);
+        break;
+    case LVN_GETDISPINFO:
+        ListViewDispInfo(hwnd, (LV_DISPINFO *)lParam);
+        break;
+    case LVN_ODFINDITEM:
+        ListViewOdFindItem(hwnd, (LPNMLVFINDITEM)lParam);
+        break;
+    case TTN_NEEDTEXT:
+        ToolBarNeedText(hwnd, (LPTOOLTIPTEXT)lParam);
+        break;
+    }
+    return 0;
 }
 
 static void Main_OnDestroy(HWND hwnd)
 {
     PostQuitMessage(0);
-}
-
-static LRESULT CALLBACK AboutDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    switch (uMsg) {
-    case WM_INITDIALOG:
-        return TRUE;
-
-    case WM_COMMAND:
-        switch (wParam) {
-        case IDOK:
-        case IDCANCEL:
-            EndDialog(hDlg, TRUE);
-            return TRUE;
-        }
-        break;
-    }
-
-    return FALSE;
 }
