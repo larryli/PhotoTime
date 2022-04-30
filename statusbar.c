@@ -1,34 +1,49 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <commctrl.h>
+
 #include "main.h"
+#include "statusbar.h"
 
-void SizeStatusPanels(HWND hWndParent, HWND hWndStatusbar)
+#define CX_SYSLINK 248
+
+#define NELEMS(a) (sizeof(a) / sizeof((a)[0]))
+
+void SizeStatusPanels(HWND hWndParent, HWND hWndStatusBar)
 {
-    int  ptArray[4];
     RECT rect;
-    int  partsize;
-
     GetClientRect(hWndParent, &rect);
-    partsize = (rect.right / 4);
-    ptArray[0] = partsize * 2;
-    for (int i = 1; i < 4; i++) {
-        ptArray[i] = ptArray[0] + (partsize * i);
+    int cxSysLink = 0;
+    HWND hWndSysLink = GetStatusBarSysLinkWnd(hWndStatusBar);
+    if (hWndSysLink != 0) {
+        cxSysLink = CX_SYSLINK;
     }
-    SendMessage(hWndStatusbar, SB_SETPARTS, 3, (LPARAM)(LPINT)ptArray);
+    int partsize = (rect.right - rect.left - cxSysLink) / 2;
+    if (partsize < cxSysLink) {
+        partsize = (rect.right - rect.left) / 3;
+    }
+    int ptArray[] = {partsize,  partsize * 2, -1};
+    SendMessage(hWndStatusBar, SB_SETPARTS, NELEMS(ptArray), (LPARAM)(LPINT)ptArray);
+    if (hWndSysLink != 0) {
+        MoveWindow(hWndSysLink, ptArray[1] + 2, 2, cxSysLink - 14, 16, TRUE);
+    }
 }
 
-HWND CreateStatusBarWnd(HWND hWndParent, TCHAR *initialText)
+HWND CreateStatusBarWnd(HWND hWndParent, HINSTANCE hInst, TCHAR *szText, TCHAR *szUrl)
 {
-    HWND hWndStatusbar = CreateStatusWindow(WS_CHILD | WS_VISIBLE | WS_BORDER | SBARS_SIZEGRIP,
-                                            initialText,
+    HWND hWndStatusBar = CreateStatusWindow(WS_CHILD | WS_VISIBLE | WS_BORDER | SBARS_SIZEGRIP,
+                                            szText,
                                             hWndParent,
                                             ID_STATUSBAR);
-    if (hWndStatusbar) {
-        SizeStatusPanels(hWndParent, hWndStatusbar);
-        return hWndStatusbar;
+    if (!hWndStatusBar)
+        return 0;
+    HWND hWndSysLink = CreateWindowEx(0, WC_LINK, szUrl, WS_VISIBLE | WS_CHILD,
+                                      0, 0, 0, 0, hWndStatusBar, NULL, hInst, NULL);
+    if (hWndSysLink) {
+        SetWindowLongPtr(hWndStatusBar, GWLP_USERDATA, (LONG_PTR)hWndSysLink);
     }
-    return 0;
+    SizeStatusPanels(hWndParent, hWndStatusBar);
+    return hWndStatusBar;
 }
 
 void SetStatusBarText(HWND hwndStatusBar, int id, TCHAR *szStatusString)

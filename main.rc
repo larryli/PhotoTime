@@ -16,6 +16,7 @@ FONT 8, "MS Shell Dlg", 0, 0, 1
   CONTROL IDR_ICO_MAIN, 4001, "Static", SS_ICON|SS_CENTERIMAGE, 5, 10, 26, 26
   CONTROL "PhotoTime", -1, "Static", WS_GROUP, 40, 10, 150, 10
   CONTROL "Version 1.0", -1, "Static", WS_GROUP, 40, 22, 150, 10
+  CONTROL "<a href=\"https://github.com/larryli/PhotoTime\">https://github.com/larryli/PhotoTime</a>", -1, "SysLink", WS_TABSTOP, 40, 36, 152, 8
 }
 
 IDR_MNU_MAIN MENUEX
@@ -50,6 +51,8 @@ IDR_MNU_CONTEXT MENUEX
   }
 }
 
+1 MANIFEST "res1.xml"
+
 STRINGTABLE
 {
   IDS_APPTITLE, "PhotoTime"
@@ -63,5 +66,7 @@ STRINGTABLE
   IDS_LAST_MODIFIED, "修改时间"
   IDS_EXIF_DATETIME, "Exif 时间"
   IDS_FILENAME_DATETIME, "文件名时间"
+  IDS_LINK, "<a href=\"https://github.com/larryli/PhotoTime\">https://github.com/larryli/PhotoTime</a>"
+  IDS_SELECT_PHOTO_DIRECTORY, "请选择照片目录"
 }
 
