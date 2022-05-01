@@ -16,7 +16,7 @@ FONT 8, "MS Shell Dlg", 0, 0, 1
   CONTROL IDR_ICO_MAIN, 4001, "Static", SS_ICON|SS_CENTERIMAGE, 5, 10, 26, 26
   CONTROL "PhotoTime", -1, "Static", WS_GROUP, 40, 10, 150, 10
   CONTROL "Version 1.0", -1, "Static", WS_GROUP, 40, 22, 150, 10
-  CONTROL "<a href=\"https://github.com/larryli/PhotoTime\">https://github.com/larryli/PhotoTime</a>", -1, "SysLink", WS_TABSTOP, 40, 36, 152, 8
+  CONTROL "<a href=\"https://github.com/larryli/PhotoTime\">https://github.com/larryli/PhotoTime</a>", -1, "SysLink", WS_TABSTOP, 40, 34, 150, 10
 }
 
 IDR_MNU_MAIN MENUEX
@@ -56,17 +56,23 @@ IDR_MNU_CONTEXT MENUEX
 STRINGTABLE
 {
   IDS_APPTITLE, "PhotoTime"
-  IDS_APPTITLE_FMT, "PhotoTime - %s"
+  IDS_APPTITLE_FMT, "PhotoTime - %ls"
   IDS_READY, "就绪"
   IDS_OPEN, "打开文件夹"
   IDS_EXIT, "退出"
   IDS_FILENAME, "文件名"
   IDS_SUBDIRECTORY, "子目录"
   IDS_SIZE, "大小"
-  IDS_LAST_MODIFIED, "修改时间"
+  IDS_LAST_WRITE, "修改时间"
   IDS_EXIF_DATETIME, "Exif 时间"
   IDS_FILENAME_DATETIME, "文件名时间"
   IDS_LINK, "<a href=\"https://github.com/larryli/PhotoTime\">https://github.com/larryli/PhotoTime</a>"
   IDS_SELECT_PHOTO_DIRECTORY, "请选择照片目录"
+  IDS_FIND_START, "开始查找照片..."
+  IDS_FINDING, "已找到 %d 张照片，继续查找..."
+  IDS_FIND_DONE, "共 %d 张照片"
+  IDS_FIND_FAILED, "查找照片失败，已找到 %d 张"
+  IDS_FINDING_SEL, "已找到 %d 张照片，当前选择 %d 张，继续查找..."
+  IDS_FIND_DONE_SEL, "共 %d 张照片，当前选择 %d 张"
+  IDS_FIND_FAILED_SEL, "查找照片失败，已找到 %d 张，当前选择 %d 张"
 }
-

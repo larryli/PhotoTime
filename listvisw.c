@@ -1,17 +1,23 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <wchar.h>
 #include <commctrl.h>
 
 #include "main.h"
 
 #include "commctrls.h"
 #include "listview.h"
+#include "photo.h"
+#include "utils.h"
 
-#define NELEMS(a) (sizeof(a) / sizeof((a)[0]))
+#define WM_SORT_START (WM_USER + 2)
 
+static void FormatSystemTime(LPTSTR, int, SYSTEMTIME *);
 static void ListView_SetHeaderSortImage(HWND, int, BOOL);
 
 static int iCount = 0;
+static int lastnColumnIndex = -1;
+static BOOL bAscendingOrder = FALSE;
 
 HWND CreateListViewWnd(HWND hWndParent, HINSTANCE hInst)
 {
@@ -34,11 +40,11 @@ HWND CreateListViewWnd(HWND hWndParent, HINSTANCE hInst)
         int cx;
     } headers[] = {
         {.uID = IDS_FILENAME, .cx = 180},
-        {.uID = IDS_SUBDIRECTORY, .cx = 180},
-        {.uID = IDS_SIZE, .cx = 120},
-        {.uID = IDS_LAST_MODIFIED, .cx = 120},
-        {.uID = IDS_EXIF_DATETIME, .cx = 120},
-        {.uID = IDS_FILENAME_DATETIME, .cx = 120},
+        {.uID = IDS_SUBDIRECTORY, .cx = 120},
+        {.uID = IDS_SIZE, .cx = 80},
+        {.uID = IDS_LAST_WRITE, .cx = 130},
+        {.uID = IDS_EXIF_DATETIME, .cx = 130},
+        {.uID = IDS_FILENAME_DATETIME, .cx = 130},
     };
     LV_COLUMN lvc = {
         .mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM,
@@ -65,41 +71,74 @@ int ListViewGetColumnWidth(HWND hWndLV)
 
 void ListViewColumnClick(HWND hWndParent, NMLISTVIEW *nmlv)
 {
-    static int lastnListViewColumnIndex = -1;
-    static BOOL bListViewAscendingOrder = FALSE;
     HWND hListView = nmlv->hdr.hwndFrom;
-    INT nListViewColumnIndex = nmlv->iSubItem;
-    if (lastnListViewColumnIndex == nListViewColumnIndex) {
-        bListViewAscendingOrder = !bListViewAscendingOrder;
+    INT nColumnIndex = nmlv->iSubItem;
+    if (lastnColumnIndex == nColumnIndex) {
+        bAscendingOrder = !bAscendingOrder;
     } else {
-        bListViewAscendingOrder = FALSE;
+        bAscendingOrder = FALSE;
     }
-    ListView_SetHeaderSortImage(hListView, nListViewColumnIndex, bListViewAscendingOrder);
-    lastnListViewColumnIndex = nListViewColumnIndex;
+    ListView_SetHeaderSortImage(hListView, nColumnIndex, bAscendingOrder);
+    lastnColumnIndex = nColumnIndex;
+    SendMessage(hWndParent, WM_SORT_START, (WPARAM)nColumnIndex, (LPARAM)bAscendingOrder);
+}
+
+void ListViewCleanSort(HWND hListView)
+{
+    lastnColumnIndex = -1;
+    bAscendingOrder = FALSE;
+    ListView_SetHeaderSortImage(hListView, lastnColumnIndex, bAscendingOrder);
 }
 
 void ListViewDispInfo(HWND hWndParent, LV_DISPINFO *lpdi)
 {
-    TCHAR szString[MAX_PATH];
-
-    if (lpdi->item.iSubItem) {
-        if (lpdi->item.mask & LVIF_TEXT) {
-            wsprintf(szString, TEXT("More %d.%d"), lpdi->item.iItem + 1, lpdi->item.iSubItem);
-            lstrcpyn(lpdi->item.pszText, szString, lpdi->item.cchTextMax);
-        }
-    } else {
-        if (lpdi->item.mask & LVIF_TEXT) {
-            wsprintf(szString, TEXT("Item %d"), lpdi->item.iItem + 1);
-            lstrcpyn(lpdi->item.pszText, szString, lpdi->item.cchTextMax);
-        }
-        if (lpdi->item.mask & LVIF_IMAGE) {
-            lpdi->item.iImage = 0;
-        }
+    if (!(lpdi->item.mask & LVIF_TEXT))
+        return;
+    if (lpdi->item.iItem >= gPhotos.iCount)
+        return;
+    if (!(gPhotos.pPs))
+        return;
+    PHOTO *pPhoto = gPhotos.pPs[lpdi->item.iItem];
+    TCHAR szBuf[MAX_PATH] = L"";
+    switch (lpdi->item.iSubItem) {
+    case 0:
+        lstrcpyn(lpdi->item.pszText, pPhoto->szFilename, lpdi->item.cchTextMax);
+        return;
+    case 1:
+        if (pPhoto->szSubDirectory)
+            lstrcpyn(lpdi->item.pszText, pPhoto->szSubDirectory, lpdi->item.cchTextMax);
+        return;
+    case 2:
+        swprintf(szBuf, MAX_PATH, L"%lld", pPhoto->filesize.QuadPart);
+        break;
+    case 3:
+        if (!(pPhoto->pStFileTime))
+            return;
+        FormatSystemTime(szBuf, MAX_PATH, pPhoto->pStFileTime);
+        break;
+    case 4:
+        if (!(pPhoto->pStExifTime))
+            return;
+        FormatSystemTime(szBuf, MAX_PATH, pPhoto->pStExifTime);
+        break;
+    case 5:
+        if (!(pPhoto->pStFilenameTime))
+            return;
+        FormatSystemTime(szBuf, MAX_PATH, pPhoto->pStFilenameTime);
+        break;
     }
+    lstrcpyn(lpdi->item.pszText, szBuf, lpdi->item.cchTextMax);
 }
 
 void ListViewOdFindItem(HWND hWndParent, LPNMLVFINDITEM lpfi)
 {
+}
+
+static void FormatSystemTime(LPTSTR szBuf, int iMax, SYSTEMTIME *pSt)
+{
+    swprintf(szBuf, iMax, L"%.4d-%.2d-%.2d %.2d:%.2d:%.2d",
+             pSt->wYear, pSt->wMonth, pSt->wDay,
+             pSt->wHour, pSt->wMinute, pSt->wSecond);
 }
 
 static void ListView_SetHeaderSortImage(HWND hWndLV, int columnIndex, BOOL isAscending)

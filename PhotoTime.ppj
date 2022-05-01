@@ -9,8 +9,8 @@ POC_PROJECT_MODE = Release#
 POC_PROJECT_RESULTDIR = .#
 POC_PROJECT_OUTPUTDIR = output#
 !if "$(POC_PROJECT_MODE)" == "Release"
-CCFLAGS = -Tx64-coff -std:C17 -Ot -Ob1 -fp:precise -W1 -Gd -Ze -DUNICODE -D_UNICODE#
-ASFLAGS = -AAMD64#
+CCFLAGS = -Tx64-coff -std:C17 -MT -Ot -Ob1 -fp:precise -W1 -Gd -Ze -DUNICODE -D_UNICODE#
+ASFLAGS = -AAMD64 -Gd#
 RCFLAGS = #
 LINKFLAGS = -machine:x64 -subsystem:windows kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib delayimp64.lib#
 SIGNFLAGS = -location:CU -store:MY -timeurl:http://timestamp.verisign.com/scripts/timstamp.dll -errkill#
@@ -56,7 +56,9 @@ PhotoTime.exe: \
 	output\main.obj \
 	output\main.res \
 	output\statusbar.obj \
-	output\toolbar.obj
+	output\toolbar.obj \
+	output\photo.obj \
+	output\utils.obj
 	$(LINK) $(LINKFLAGS) -out:"$@" $**
 
 # 
@@ -68,8 +70,10 @@ output\main.obj: \
 	commctrls.h \
 	listview.h \
 	main.h \
+	photo.h \
 	statusbar.h \
-	toolbar.h
+	toolbar.h \
+	utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
@@ -77,7 +81,12 @@ output\main.obj: \
 # 
 output\main.res: \
 	main.rc \
-	main.h
+	down.bmp \
+	main.h \
+	main.ico \
+	res1.xml \
+	toolbar.bmp \
+	up.bmp
 	$(RC) $(RCFLAGS) "$!" -Fo"$@"
 
 # 
@@ -105,7 +114,9 @@ output\listvisw.obj: \
 	listvisw.c \
 	commctrls.h \
 	listview.h \
-	main.h
+	main.h \
+	photo.h \
+	utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
@@ -123,6 +134,23 @@ output\about.obj: \
 	about.c \
 	about.h \
 	main.h
+	$(CC) $(CCFLAGS) "$!" -Fo"$@"
+
+# 
+# Build photo.obj.
+# 
+output\photo.obj: \
+	photo.c \
+	photo.h \
+	utils.h
+	$(CC) $(CCFLAGS) "$!" -Fo"$@"
+
+# 
+# Build utils.obj.
+# 
+output\utils.obj: \
+	utils.c \
+	utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 .SILENT:
