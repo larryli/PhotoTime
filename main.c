@@ -19,7 +19,9 @@
 #include "toolbar.h"
 #include "statusbar.h"
 #include "photo.h"
+#include "photoview.h"
 #include "utils.h"
+#include "gdip.h"
 
 #define WM_FIND_DONE (WM_USER + 1)
 #define WM_SORT_START (WM_USER + 2)
@@ -50,7 +52,7 @@ static void UnLock(HWND);
 
 static HANDLE ghInstance;
 static HCURSOR ghCurSizeEW, ghCurArrow;
-static HWND ghWndToolBar, ghWndListView, ghWndPhoto, ghWndStatusBar;
+static HWND ghWndToolBar, ghWndListView, ghWndPhotoView, ghWndStatusBar;
 static RECT gRcClient;
 static BOOL bSplitDrag = FALSE;
 static BOOL bLock = FALSE;
@@ -69,6 +71,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pszCmdL
         if (!InitApplication(hInstance))
             return FALSE;
     InitCommCtrl();
+    InitGdip();
     if (!InitInstance(hInstance, nCmdShow))
         return FALSE;
 
@@ -94,6 +97,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pszCmdL
         DispatchMessage(&msg);
     }
 #endif
+    DeinitGdip();
     return msg.wParam;
 }
 
@@ -155,6 +159,8 @@ static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
     HANDLE_MSG(hwnd, WM_LBUTTONUP, Main_OnLButtonUp);
     HANDLE_MSG(hwnd, WM_MOUSEMOVE, Main_OnMouseMove);
     HANDLE_MSG(hwnd, WM_TIMER, Main_OnTimer);
+    case WM_SETFOCUS:
+        return SetFocus(ghWndListView), 0;
     case WM_FIND_DONE:
         return Main_OnFindDone(hwnd, (BOOL)wParam), 0;
     case WM_SORT_START:
@@ -182,16 +188,8 @@ static LRESULT Main_OnCreate(HWND hwnd, LPCREATESTRUCT lParam)
     ghWndListView = CreateListViewWnd(hwnd, ghInstance);
     if (!ghWndListView)
         return FALSE;
-    ghWndPhoto = CreateWindowEx(WS_EX_STATICEDGE,
-                                L"Static",
-                                NULL,
-                                WS_CHILD | WS_VISIBLE | LWS_TRANSPARENT,
-                                0, 0, 0, 0,
-                                hwnd,
-                                0,
-                                ghInstance,
-                                NULL);
-    if (!ghWndPhoto)
+    ghWndPhotoView = CreatePhotoViewWnd(hwnd, ghInstance);
+    if (!ghWndPhotoView)
         return FALSE;
     SetFocus(ghWndListView);
     return TRUE;
@@ -246,7 +244,7 @@ static LRESULT Main_OnSize(HWND hwnd, int flag, int x, int y)
             cxPhoto = 0;
         }
         MoveWindow(ghWndListView, gRcClient.left, gRcClient.top, cxListView, cy, TRUE);
-        MoveWindow(ghWndPhoto, gRcClient.left + cxListView + 2, gRcClient.top, cxPhoto, cy, TRUE);
+        MoveWindow(ghWndPhotoView, gRcClient.left + cxListView + 2, gRcClient.top, cxPhoto, cy, TRUE);
     }
     return 0;
 }
@@ -276,7 +274,7 @@ static void Main_OnMouseMove(HWND hwnd, int x, int y, UINT keyFlags)
             cxListView = x - gRcClient.left - 1;
             cxPhoto = cx - cxListView - 2;
             MoveWindow(ghWndListView, gRcClient.left, gRcClient.top, cxListView, cy, TRUE);
-            MoveWindow(ghWndPhoto, gRcClient.left + cxListView + 2, gRcClient.top, cxPhoto, cy, TRUE);
+            MoveWindow(ghWndPhotoView, gRcClient.left + cxListView + 2, gRcClient.top, cxPhoto, cy, TRUE);
         }
     }
 }
@@ -394,7 +392,19 @@ static LRESULT Main_OnNotify(HWND hwnd, int wParam, NMHDR *lParam)
         break;
     case LVN_ITEMCHANGED:
         if (lParam->hwndFrom == ghWndListView) {
-            UpdateStatus(IDS_FIND_DONE_SEL, IDS_FIND_DONE);
+            LPNM_LISTVIEW lpNmLv = (LPNM_LISTVIEW)lParam;
+            if (lpNmLv->uChanged == LVIF_STATE) {
+                UpdateStatus(IDS_FIND_DONE_SEL, IDS_FIND_DONE);
+                if (lpNmLv->uNewState == 3) {
+                    if (gPhotos.pPs) {
+                        PHOTO *pPhoto = gPhotos.pPs[lpNmLv->iItem];
+                        TCHAR szPath[MAX_PATH] = L"";
+                        CatFilePath(szPath, NELEMS(szPath), gPhotos.szPath, pPhoto->szSubDirectory);
+                        CatFilePath(szPath, NELEMS(szPath), szPath, pPhoto->szFilename);
+                        PhotoView_SetPath(ghWndPhotoView, szPath);
+                    }
+                }
+            }
         }
         break;
     case LVN_ODFINDITEM:
@@ -422,6 +432,7 @@ static void Main_OnTimer(HWND hwnd, UINT id)
 
 static void Main_OnDestroy(HWND hwnd)
 {
+    DestroyPhotoViewWnd(ghWndPhotoView);
     PostQuitMessage(0);
 }
 

@@ -6,9 +6,14 @@
 
 void CatFilePath(LPTSTR szBuf, int size, LPCTSTR szParent, LPCTSTR szPath)
 {
-    lstrcpyn(szBuf, szParent, size);
-    _tcsncat(szBuf, TEXT("\\"), size);
-    _tcsncat(szBuf, szPath, size);
+    if (!szBuf || size <= 0)
+        return;
+    if (szBuf != szParent && szParent)
+        lstrcpyn(szBuf, szParent, size);
+    if (szPath) {
+        _tcsncat(szBuf, TEXT("\\"), size);
+        _tcsncat(szBuf, szPath, size);
+    }
 }
 
 void GetFileExt(LPTSTR szExt, int size, LPCTSTR szPath)

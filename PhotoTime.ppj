@@ -52,12 +52,14 @@ POC_PROJECT_ZIPEXTRA = #
 PhotoTime.exe: \
 	output\about.obj \
 	output\commctrls.obj \
+	output\gdip.obj \
 	output\listvisw.obj \
 	output\main.obj \
 	output\main.res \
+	output\photo.obj \
+	output\photoview.obj \
 	output\statusbar.obj \
 	output\toolbar.obj \
-	output\photo.obj \
 	output\utils.obj
 	$(LINK) $(LINKFLAGS) -out:"$@" $**
 
@@ -68,9 +70,11 @@ output\main.obj: \
 	main.c \
 	about.h \
 	commctrls.h \
+	gdip.h \
 	listview.h \
 	main.h \
 	photo.h \
+	photoview.h \
 	statusbar.h \
 	toolbar.h \
 	utils.h
@@ -141,6 +145,7 @@ output\about.obj: \
 # 
 output\photo.obj: \
 	photo.c \
+	gdip.h \
 	photo.h \
 	utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
@@ -151,6 +156,25 @@ output\photo.obj: \
 output\utils.obj: \
 	utils.c \
 	utils.h
+	$(CC) $(CCFLAGS) "$!" -Fo"$@"
+
+# 
+# Build gdip.obj.
+# 
+output\gdip.obj: \
+	gdip.c \
+	gdip.h \
+	gdipimage.h
+	$(CC) $(CCFLAGS) "$!" -Fo"$@"
+
+# 
+# Build photoview.obj.
+# 
+output\photoview.obj: \
+	photoview.c \
+	gdip.h \
+	gdipimage.h \
+	photoview.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 .SILENT:

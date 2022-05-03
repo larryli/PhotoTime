@@ -3,9 +3,12 @@
 #include <wchar.h>
 #define __STDC_WANT_LIB_EXT1__ 1
 #include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
 
 #include "photo.h"
 #include "utils.h"
+#include "gdip.h"
 
 #define PHOTOS_SIZE 100
 
@@ -98,9 +101,17 @@ BOOL FindPhoto(LPCTSTR szPath)
 {
     if (gPhotos.pPs)
         FreePhotos();
-    ghPs = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(PHOTO *) * iPsMax);
-    if (!ghPs)
+    int size = lstrlen(szPath) + 1;
+    gPhotos.szPath = GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, sizeof(TCHAR) * size);
+    if (!(gPhotos.szPath))
         return FALSE;
+    lstrcpyn(gPhotos.szPath, szPath, size);
+    ghPs = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(PHOTO *) * iPsMax);
+    if (!ghPs) {
+        GlobalFree(gPhotos.szPath);
+        gPhotos.szPath = NULL;
+        return FALSE;
+    }
     gPhotos.pPs = (PHOTO **)GlobalLock(ghPs);
     if (FindPhotoWithSub(szPath, NULL))
         return TRUE;
@@ -152,6 +163,10 @@ static void FreePhotos(void)
     GlobalUnlock(ghPs);
     GlobalFree(ghPs);
     ghPs = NULL;
+    if (gPhotos.szPath) {
+        GlobalFree(gPhotos.szPath);
+        gPhotos.szPath = NULL;
+    }
     iPsMax = PHOTOS_SIZE;
 }
 
@@ -160,11 +175,13 @@ static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
     PHOTO *pPhoto = (PHOTO *)GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, sizeof(PHOTO));
     if (!pPhoto)
         return NULL;
+
     int size = lstrlen(pWfd->cFileName) + 1;
     pPhoto->szFilename = (LPTSTR)GlobalAlloc(GMEM_FIXED, sizeof(TCHAR) * size);
     if (!(pPhoto->szFilename))
         goto failed;
     lstrcpyn(pPhoto->szFilename, pWfd->cFileName, size);
+
     if (szSub) {
         size = lstrlen(szSub) + 1;
         pPhoto->szSubDirectory = (LPTSTR)GlobalAlloc(GMEM_FIXED, sizeof(TCHAR) * size);
@@ -172,14 +189,30 @@ static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
             goto failed;
         lstrcpyn(pPhoto->szSubDirectory, szSub, size);
     }
+
     pPhoto->filesize.LowPart = pWfd->nFileSizeLow;
     pPhoto->filesize.HighPart  = pWfd->nFileSizeHigh;
+
     pPhoto->pStFileTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
     if (!(pPhoto->pStFileTime))
         goto failed;
     FILETIME ftLocal;
     FileTimeToLocalFileTime(&(pWfd->ftLastWriteTime), &ftLocal);
     FileTimeToSystemTime(&ftLocal, pPhoto->pStFileTime);
+
+    LPSTR szExifTime;
+    if (GdipGetPropertyTagDateTime(szPath, &szExifTime)) {
+        pPhoto->pStExifTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, sizeof(SYSTEMTIME));
+        if (!(pPhoto->pStExifTime)) {
+            GlobalFree(szExifTime);
+            goto failed;
+        }
+        sscanf(szExifTime, "%hu:%hu:%hu %hu:%hu:%hu",
+            &(pPhoto->pStExifTime->wYear), &(pPhoto->pStExifTime->wMonth), &(pPhoto->pStExifTime->wDay),
+            &(pPhoto->pStExifTime->wHour), &(pPhoto->pStExifTime->wMinute), &(pPhoto->pStExifTime->wSecond));
+        GlobalFree(szExifTime);
+    }
+
     return pPhoto;
 failed:
     if (pPhoto->szFilename)
@@ -247,9 +280,9 @@ static int AscSubDirectory(const PHOTO **a, const PHOTO **b, void *d)
         if ((*b)->szSubDirectory == NULL)
             return 0;
         else
-            return 1;
+            return -1;
     } else if ((*b)->szSubDirectory == NULL)
-        return -1;
+        return 1;
     else
         return _wcsicmp((*a)->szSubDirectory, (*b)->szSubDirectory);
 }
@@ -260,9 +293,9 @@ static int DescSubDirectory(const PHOTO **a, const PHOTO **b, void *d)
         if ((*b)->szSubDirectory == NULL)
             return 0;
         else
-            return -1;
+            return 1;
     } else if ((*b)->szSubDirectory == NULL)
-        return 1;
+        return -1;
     else
         return _wcsicmp((*b)->szSubDirectory, (*a)->szSubDirectory);
 }
@@ -309,9 +342,9 @@ static int AscExifTime(const PHOTO **a, const PHOTO **b, void *d)
         if ((*b)->pStExifTime == NULL)
                 return 0;
             else
-                return 1;
+                return -1;
     } else if ((*b)->pStExifTime == NULL)
-        return -1;
+        return 1;
     else {
         FILETIME ftA, ftB;
         SystemTimeToFileTime((*a)->pStExifTime, &ftA);
@@ -326,9 +359,9 @@ static int DescExifTime(const PHOTO **a, const PHOTO **b, void *d)
         if ((*b)->pStExifTime == NULL)
                 return 0;
             else
-                return -1;
+                return 1;
     } else if ((*b)->pStExifTime == NULL)
-        return 1;
+        return -1;
     else {
         FILETIME ftA, ftB;
         SystemTimeToFileTime((*a)->pStExifTime, &ftA);
@@ -343,9 +376,9 @@ static int AscFilenameTime(const PHOTO **a, const PHOTO **b, void *d)
         if ((*b)->pStFilenameTime == NULL)
                 return 0;
             else
-                return 1;
+                return -1;
     } else if ((*b)->pStFilenameTime == NULL)
-        return -1;
+        return 1;
     else {
         FILETIME ftA, ftB;
         SystemTimeToFileTime((*a)->pStFilenameTime, &ftA);
@@ -360,9 +393,9 @@ static int DescFilenameTime(const PHOTO **a, const PHOTO **b, void *d)
         if ((*b)->pStFilenameTime == NULL)
                 return 0;
             else
-                return -1;
+                return 1;
     } else if ((*b)->pStFilenameTime == NULL)
-        return 1;
+        return -1;
     else {
         FILETIME ftA, ftB;
         SystemTimeToFileTime((*a)->pStFilenameTime, &ftA);

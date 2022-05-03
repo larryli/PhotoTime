@@ -10,6 +10,7 @@ typedef struct {
 } PHOTO;
 
 typedef struct {
+    LPTSTR szPath;
     PHOTO **pPs;
     int iCount;
 } PHOTOS;

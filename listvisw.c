@@ -24,7 +24,7 @@ HWND CreateListViewWnd(HWND hWndParent, HINSTANCE hInst)
     HWND hWndLV = CreateWindowEx(WS_EX_CLIENTEDGE,
                                  WC_LISTVIEW,
                                  (LPTSTR) NULL,
-                                 WS_TABSTOP | WS_CHILD | WS_VISIBLE | LVS_AUTOARRANGE | LVS_REPORT | LVS_OWNERDATA,
+                                 WS_TABSTOP | WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_OWNERDATA,
                                  0, 0, 0, 0,
                                  hWndParent,
                                  (HMENU) ID_LISTVIEW,
@@ -112,8 +112,6 @@ void ListViewDispInfo(HWND hWndParent, LV_DISPINFO *lpdi)
         swprintf(szBuf, MAX_PATH, L"%lld", pPhoto->filesize.QuadPart);
         break;
     case 3:
-        if (!(pPhoto->pStFileTime))
-            return;
         FormatSystemTime(szBuf, MAX_PATH, pPhoto->pStFileTime);
         break;
     case 4:
