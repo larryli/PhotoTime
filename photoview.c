@@ -4,6 +4,8 @@
 
 #include "gdip.h"
 #include "photoview.h"
+#include "main.h"
+#include "utils.h"
 
 #define HANDLE_PVM_SETPATH(hwnd,wParam,lParam,fn) ((fn)((hwnd),(LPCTSTR)(wParam)),0)
 
@@ -38,10 +40,13 @@ void DestroyPhotoViewWnd(HWND hWndPV)
 static void PhotoView_OnSetPath(HWND hwnd, LPCTSTR szPath)
 {
     InvalidateRect(hwnd, NULL, TRUE);
-    void *data = (void *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-    GdipDestoryImage(data);
-    data = GdipLoadImage(szPath);
-    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)data);
+    LONG_PTR p = GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    if (p != -1)
+        GdipDestoryImage((void *)p);
+    p = (LONG_PTR)GdipLoadImage(szPath);
+    if (!p)
+        p = -1;
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, p);
 }
 
 static BOOL PhotoView_OnEraseBkgnd(HWND hwnd, HDC hdc)
@@ -52,14 +57,28 @@ static BOOL PhotoView_OnEraseBkgnd(HWND hwnd, HDC hdc)
     return TRUE;
 }
 
+static void DrawIdString(HWND hwnd, HDC hdc, RECT *rc, int id)
+{
+    TCHAR szBuf[MAX_PATH];
+    if (LoadString((HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), id, szBuf, NELEMS(szBuf))) {
+        SelectObject(hdc, GetStockObject(OEM_FIXED_FONT));
+        SetTextColor(hdc, GetSysColor(COLOR_GRAYTEXT));
+        SetBkColor(hdc, GetSysColor(COLOR_BTNFACE));
+        DrawText(hdc, szBuf, -1, rc, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+    }
+}
+
 static void PhotoView_OnPaint(HWND hwnd)
 {
     PAINTSTRUCT ps;
     RECT rc;
     GetClientRect(hwnd, &rc);
     BeginPaint(hwnd, &ps);
-    void *data = (void *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-    GdipDrawImage(data, ps.hdc, &rc);
+    LONG_PTR p = GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    if (p == -1)
+        DrawIdString(hwnd, ps.hdc, &rc, IDS_LOAD_PHOTO_FAILED);
+    else if (p && !GdipDrawImage((void *)p, ps.hdc, &rc))
+        DrawIdString(hwnd, ps.hdc, &rc, IDS_SHOW_PHOTO_FAILED);
     EndPaint(hwnd, &ps);
 }
 
@@ -71,8 +90,9 @@ static void PhotoView_OnSize(HWND hwnd, UINT state, int cx, int cy)
 
 static void PhotoView_OnDestroy(HWND hwnd)
 {
-    void *data = (void *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-    GdipDestoryImage(data);
+    LONG_PTR p = GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    if (p != -1)
+        GdipDestoryImage((void *)p);
     SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
     FORWARD_WM_DESTROY(hwnd, pPhotoViewProc);
 }

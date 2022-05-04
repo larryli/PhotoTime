@@ -5,4 +5,4 @@ void DeinitGdip(void);
 BOOL GdipGetPropertyTagDateTime(LPCTSTR szFilepath, LPSTR *pSzBuf);
 void *GdipLoadImage(LPCTSTR szPath);
 void GdipDestoryImage(void *data);
-BOOL GdipDrawImage(void *data, HDC hdc, RECT * rc);
+BOOL GdipDrawImage(void *data, HDC hdc, const RECT * rc);

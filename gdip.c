@@ -91,7 +91,7 @@ void GdipDestoryImage(void *data)
         GdipDisposeImage(image);
 }
 
-BOOL GdipDrawImage(void *data, HDC hdc, RECT * rc)
+BOOL GdipDrawImage(void *data, HDC hdc, const RECT * rc)
 {
     BOOL bRet = FALSE;
     GpImage *image = (GpImage *)data;
@@ -100,41 +100,43 @@ BOOL GdipDrawImage(void *data, HDC hdc, RECT * rc)
     GpGraphics *graphics = NULL;
     if (Ok != GdipCreateFromHDC(hdc, &graphics))
         return bRet;
-    UINT iw, ih;
-    if (Ok != GdipGetImageWidth(image, &iw))
+    UINT w, h;
+    if (Ok != GdipGetImageWidth(image, &w))
         goto end;
-    if (Ok != GdipGetImageHeight(image, &ih))
+    if (Ok != GdipGetImageHeight(image, &h))
         goto end;
+    UINT x = rc->left;
+    UINT y = rc->top;
     UINT cw = (UINT)(rc->right - rc->left);
     UINT ch = (UINT)(rc->bottom - rc->top);
-    if (iw > cw) {
-        float rw = iw / (float)cw;
-        if (ih > ch) {
-            float rh = (float)ih / (float)ch;
+    if (w > cw) {
+        float rw = w / (float)cw;
+        if (h > ch) {
+            float rh = (float)h / (float)ch;
             if (rw > rh) {
-                iw = cw;
-                ih = (UINT)((float)ih / rw);
-                rc->top += (LONG)((ch - ih) / 2);
+                w = cw;
+                h = (UINT)((float)h / rw);
+                y += (LONG)((ch - h) / 2);
             } else {
-                ih = ch;
-                iw = (UINT)((float)iw / rh);
-                rc->left += (LONG)((cw - iw) / 2);
+                h = ch;
+                w = (UINT)((float)w / rh);
+                x += (LONG)((cw - w) / 2);
             }
         } else {
-            iw = cw;
-            ih = (UINT)((float)ih / rw);
-            rc->top += (LONG)((ch - ih) / 2);
+            w = cw;
+            h = (UINT)((float)h / rw);
+            y += (LONG)((ch - h) / 2);
         }
-    } else if (ih > ch) {
-        float rh = ih / (float)ch;
-        ih = ch;
-        iw = (UINT)((float)iw / rh);
-        rc->left += (LONG)((cw - iw) / 2);
+    } else if (h > ch) {
+        float rh = h / (float)ch;
+        h = ch;
+        w = (UINT)((float)w / rh);
+        x += (LONG)((cw - w) / 2);
     } else {
-        rc->left += (LONG)((cw - iw) / 2);
-        rc->top += (LONG)((ch - ih) / 2);
+        x += (LONG)((cw - w) / 2);
+        y += (LONG)((ch - h) / 2);
     }
-    if (Ok == GdipDrawImageRectI(graphics, image, rc->left, rc->top, iw, ih))
+    if (Ok == GdipDrawImageRectI(graphics, image, x, y, w, h))
         bRet = TRUE;
 end:
     if (graphics)

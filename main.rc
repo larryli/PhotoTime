@@ -75,4 +75,6 @@ STRINGTABLE
   IDS_FINDING_SEL, "已找到 %d 张照片，当前选择 %d 张，继续查找..."
   IDS_FIND_DONE_SEL, "共 %d 张照片，当前选择 %d 张"
   IDS_FIND_FAILED_SEL, "查找照片失败，已找到 %d 张，当前选择 %d 张"
+  IDS_LOAD_PHOTO_FAILED, "无法载入照片！"
+  IDS_SHOW_PHOTO_FAILED, "显示照片失败。"
 }

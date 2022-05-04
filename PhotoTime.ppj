@@ -174,7 +174,9 @@ output\gdip.obj: \
 output\photoview.obj: \
 	photoview.c \
 	gdip.h \
-	photoview.h
+	main.h \
+	photoview.h \
+	utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 .SILENT:
