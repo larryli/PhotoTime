@@ -173,7 +173,6 @@ output\gdip.obj: \
 output\photoview.obj: \
 	photoview.c \
 	gdip.h \
-	gdipimage.h \
 	photoview.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 

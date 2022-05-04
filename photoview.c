@@ -2,7 +2,6 @@
 #include <windows.h>
 #include <windowsx.h>
 
-#include "gdipimage.h"
 #include "gdip.h"
 #include "photoview.h"
 
@@ -39,21 +38,17 @@ void DestroyPhotoViewWnd(HWND hWndPV)
 static void PhotoView_OnSetPath(HWND hwnd, LPCTSTR szPath)
 {
     InvalidateRect(hwnd, NULL, TRUE);
-    GpImage *image = (GpImage *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-    if (image) {
-        GdipDisposeImage(image);
-        SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
-    }
-    if (Ok != GdipLoadImageFromFile(szPath, &image))
-        return;
-    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)image);
+    void *data = (void *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    GdipDestoryImage(data);
+    data = GdipLoadImage(szPath);
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)data);
 }
 
 static BOOL PhotoView_OnEraseBkgnd(HWND hwnd, HDC hdc)
 {
     RECT rc;
     GetClientRect(hwnd, &rc);
-    FillRect(hdc, &rc, GetSysColorBrush(COLOR_3DLIGHT));
+    FillRect(hdc, &rc, GetSysColorBrush(COLOR_BTNFACE));
     return TRUE;
 }
 
@@ -63,20 +58,23 @@ static void PhotoView_OnPaint(HWND hwnd)
     RECT rc;
     GetClientRect(hwnd, &rc);
     BeginPaint(hwnd, &ps);
-    GpImage *image = (GpImage *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-    if (image)
-        GdipDrawImage(image, ps.hdc, &rc, TRUE);
+    void *data = (void *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    GdipDrawImage(data, ps.hdc, &rc);
     EndPaint(hwnd, &ps);
 }
 
-void PhotoView_OnDestroy(HWND hwnd)
+static void PhotoView_OnSize(HWND hwnd, UINT state, int cx, int cy)
 {
-    GpImage *image = (GpImage *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-    if (image) {
-        GdipDisposeImage(image);
-        SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
-    }
-    CallWindowProc(pPhotoViewProc, hwnd, WM_DESTROY, 0, 0);
+    FORWARD_WM_SIZE(hwnd, state, cx, cy, pPhotoViewProc);
+    InvalidateRect(hwnd, NULL, TRUE);
+}
+
+static void PhotoView_OnDestroy(HWND hwnd)
+{
+    void *data = (void *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    GdipDestoryImage(data);
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
+    FORWARD_WM_DESTROY(hwnd, pPhotoViewProc);
 }
 
 static LRESULT CALLBACK PhotoViewWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -85,6 +83,7 @@ static LRESULT CALLBACK PhotoViewWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
     HANDLE_MSG(hwnd, PVM_SETPATH, PhotoView_OnSetPath);
     HANDLE_MSG(hwnd, WM_ERASEBKGND, PhotoView_OnEraseBkgnd);
     HANDLE_MSG(hwnd, WM_PAINT, PhotoView_OnPaint);
+    HANDLE_MSG(hwnd, WM_SIZE, PhotoView_OnSize);
     HANDLE_MSG(hwnd, WM_DESTROY, PhotoView_OnDestroy);
     default:
         return CallWindowProc(pPhotoViewProc, hwnd, msg, wParam, lParam);

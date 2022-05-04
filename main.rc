@@ -56,7 +56,7 @@ IDR_MNU_CONTEXT MENUEX
 STRINGTABLE
 {
   IDS_APPTITLE, "PhotoTime"
-  IDS_APPTITLE_FMT, "PhotoTime - %ls"
+  IDS_APPTITLE_FMT, "%ls - PhotoTime"
   IDS_READY, "就绪"
   IDS_OPEN, "打开文件夹"
   IDS_EXIT, "退出"

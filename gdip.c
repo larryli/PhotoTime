@@ -10,7 +10,6 @@ static ULONG_PTR upToken;
 
 void InitGdip(void)
 {
-
     GdiplusStartupInput gdiplusStartupInput = {1, NULL, FALSE, FALSE};
     GdiplusStartup(&upToken, &gdiplusStartupInput, NULL);
 }
@@ -52,52 +51,68 @@ end:
     return bRet;
 }
 
-void GdipDrawImage(void *data, HDC hdc, RECT * rc, BOOL fit)
+void *GdipLoadImage(LPCTSTR szPath)
+{
+    GpImage *image;
+    if (Ok == GdipLoadImageFromFile(szPath, &image))
+        return image;
+    return NULL;
+}
+
+void GdipDestoryImage(void *data)
 {
     GpImage *image = (GpImage *)data;
+    if (image)
+        GdipDisposeImage(image);
+}
+
+BOOL GdipDrawImage(void *data, HDC hdc, RECT * rc)
+{
+    BOOL bRet = FALSE;
+    GpImage *image = (GpImage *)data;
     if (!image)
-        return;
+        return bRet;
     GpGraphics *graphics = NULL;
     if (Ok != GdipCreateFromHDC(hdc, &graphics))
-        return;
+        return bRet;
     UINT iw, ih;
     if (Ok != GdipGetImageWidth(image, &iw))
         goto end;
     if (Ok != GdipGetImageHeight(image, &ih))
         goto end;
-    if (fit) {
-        UINT cw = (UINT)(rc->right - rc->left);
-        UINT ch = (UINT)(rc->bottom - rc->top);
-        if (iw > cw) {
-            float rw = iw / (float)cw;
-            if (ih > ch) {
-                float rh = (float)ih / (float)ch;
-                if (rw < rh) {
-                    iw = cw;
-                    ih = (UINT)((float)ih / rw);
-                    rc->top += (LONG)((ch - ih) / 2);
-                } else {
-                    ih = ch;
-                    iw = (UINT)((float)iw / rh);
-                    rc->left += (LONG)((cw - iw) / 2);
-                }
-            } else {
+    UINT cw = (UINT)(rc->right - rc->left);
+    UINT ch = (UINT)(rc->bottom - rc->top);
+    if (iw > cw) {
+        float rw = iw / (float)cw;
+        if (ih > ch) {
+            float rh = (float)ih / (float)ch;
+            if (rw > rh) {
                 iw = cw;
                 ih = (UINT)((float)ih / rw);
                 rc->top += (LONG)((ch - ih) / 2);
+            } else {
+                ih = ch;
+                iw = (UINT)((float)iw / rh);
+                rc->left += (LONG)((cw - iw) / 2);
             }
-        } else if (ih > ch) {
-            float rh = ih / (float)ch;
-            ih = ch;
-            iw = (UINT)((float)iw / rh);
-            rc->left += (LONG)((cw - iw) / 2);
         } else {
-            rc->left += (LONG)((cw - iw) / 2);
+            iw = cw;
+            ih = (UINT)((float)ih / rw);
             rc->top += (LONG)((ch - ih) / 2);
         }
+    } else if (ih > ch) {
+        float rh = ih / (float)ch;
+        ih = ch;
+        iw = (UINT)((float)iw / rh);
+        rc->left += (LONG)((cw - iw) / 2);
+    } else {
+        rc->left += (LONG)((cw - iw) / 2);
+        rc->top += (LONG)((ch - ih) / 2);
     }
-    GdipDrawImageRectI(graphics, image, rc->left, rc->top, iw, ih);
+    if (Ok == GdipDrawImageRectI(graphics, image, rc->left, rc->top, iw, ih))
+        bRet = TRUE;
 end:
     if (graphics)
         GdipDeleteGraphics(graphics);
+    return bRet;
 }

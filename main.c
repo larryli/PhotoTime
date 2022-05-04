@@ -124,7 +124,7 @@ static BOOL InitApplication(HINSTANCE hInstance)
 
 static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-    TCHAR szTitle[MAX_PATH] = L"PhotoTime";
+    TCHAR szTitle[MAX_PATH] = L"";
     if (!LoadString(hInstance, IDS_APPTITLE, szTitle, NELEMS(szTitle)))
         return FALSE;
     HWND hwnd = CreateWindow(L"PhotoTimeClass",
@@ -308,7 +308,6 @@ static void OpenDirectory(HWND hwnd)
     TCHAR szPath[MAX_PATH] = {0};
     if (!SHGetPathFromIDList(lpDlist, szPath))
         return;
-    SetStatusBarText(ghWndStatusBar, 1, szPath);
     if (LoadString(ghInstance, IDS_APPTITLE_FMT, szTitle, NELEMS(szTitle))) {
         TCHAR szBuf[MAX_PATH * 2] = {0};
         _snwprintf(szBuf, NELEMS(szBuf), szTitle, szPath);
@@ -398,10 +397,17 @@ static LRESULT Main_OnNotify(HWND hwnd, int wParam, NMHDR *lParam)
                 if (lpNmLv->uNewState == 3) {
                     if (gPhotos.pPs) {
                         PHOTO *pPhoto = gPhotos.pPs[lpNmLv->iItem];
-                        TCHAR szPath[MAX_PATH] = L"";
-                        CatFilePath(szPath, NELEMS(szPath), gPhotos.szPath, pPhoto->szSubDirectory);
-                        CatFilePath(szPath, NELEMS(szPath), szPath, pPhoto->szFilename);
-                        PhotoView_SetPath(ghWndPhotoView, szPath);
+                        if (pPhoto) {
+                            TCHAR szPath[MAX_PATH] = L"";
+                            if (pPhoto->szSubDirectory) {
+                                CatFilePath(szPath, NELEMS(szPath), pPhoto->szSubDirectory, pPhoto->szFilename);
+                                SetStatusBarText(ghWndStatusBar, 1, szPath);
+                            } else
+                                SetStatusBarText(ghWndStatusBar, 1, pPhoto->szFilename);
+                            CatFilePath(szPath, NELEMS(szPath), gPhotos.szPath, pPhoto->szSubDirectory);
+                            CatFilePath(szPath, NELEMS(szPath), szPath, pPhoto->szFilename);
+                            PhotoView_SetPath(ghWndPhotoView, szPath);
+                        }
                     }
                 }
             }
