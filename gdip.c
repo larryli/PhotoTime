@@ -3,6 +3,7 @@
 
 #include "gdipimage.h"
 #include "gdip.h"
+#include "utils.h"
 
 #pragma comment(lib, "GdiPlus.lib")
 
@@ -51,12 +52,36 @@ end:
     return bRet;
 }
 
+static RotateFlipType rfts[] = {
+    RotateNoneFlipX,    // PropertyTagRotateNoneFlipX
+    Rotate180FlipNone,  // PropertyTagRotate180FlipNone
+    Rotate180FlipX,     // PropertyTagRotate180FlipX
+    Rotate90FlipX,      // PropertyTagRotate270FlipX
+    Rotate90FlipNone,   // PropertyTagRotate270FlipNone
+    Rotate270FlipX,     // PropertyTagRotate90FlipX
+    Rotate270FlipNone,  // PropertyTagRotate90FlipNone
+};
+
 void *GdipLoadImage(LPCTSTR szPath)
 {
     GpImage *image;
-    if (Ok == GdipLoadImageFromFile(szPath, &image))
-        return image;
-    return NULL;
+    if (Ok != GdipLoadImageFromFile(szPath, &image))
+        return NULL;
+    UINT size = 0;
+    if (Ok == GdipGetPropertyItemSize(image, PropertyTagOrientation, &size)) {
+        PropertyItem *pPropBuffer = (PropertyItem *)GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, size);
+        if (pPropBuffer) {
+            if (Ok == GdipGetPropertyItem(image, PropertyTagOrientation, size, pPropBuffer)) {
+                if (pPropBuffer->type == PropertyTagTypeShort) {
+                    SHORT n = *((SHORT *)pPropBuffer->value) - PropertyTagRotateNoneFlipX;
+                    if (n >= 0 && n < (SHORT)NELEMS(rfts))
+                        GdipImageRotateFlip(image, rfts[n]);
+                }
+            }
+            GlobalFree(pPropBuffer);
+        }
+    }
+    return image;
 }
 
 void GdipDestoryImage(void *data)

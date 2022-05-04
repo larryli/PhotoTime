@@ -43,6 +43,7 @@ static BOOL IsIgnoreDirectory(LPCTSTR szPath)
 {
     static LPCTSTR szIgnores[] = {
         L".@__thumb",
+        L"@Recycle"
     };
     for (int i = 0; i < (int)NELEMS(szIgnores); i++)
         if (_wcsicmp(szPath, szIgnores[i]) == 0)

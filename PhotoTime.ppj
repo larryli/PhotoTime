@@ -164,7 +164,8 @@ output\utils.obj: \
 output\gdip.obj: \
 	gdip.c \
 	gdip.h \
-	gdipimage.h
+	gdipimage.h \
+	utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
