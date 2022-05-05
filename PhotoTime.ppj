@@ -99,7 +99,8 @@ output\main.res: \
 output\statusbar.obj: \
 	statusbar.c \
 	main.h \
-	statusbar.h
+	statusbar.h \
+	utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
@@ -137,7 +138,8 @@ output\commctrls.obj: \
 output\about.obj: \
 	about.c \
 	about.h \
-	main.h
+	main.h \
+	utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 

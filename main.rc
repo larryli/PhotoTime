@@ -13,10 +13,10 @@ CAPTION "关于"
 FONT 8, "MS Shell Dlg", 0, 0, 1
 {
   CONTROL "OK", IDOK, "Button", WS_TABSTOP, 75, 55, 45, 15
-  CONTROL IDR_ICO_MAIN, 4001, "Static", SS_ICON|SS_CENTERIMAGE, 5, 10, 26, 26
-  CONTROL "PhotoTime", -1, "Static", WS_GROUP, 40, 10, 150, 10
-  CONTROL "Version 1.0", -1, "Static", WS_GROUP, 40, 22, 150, 10
-  CONTROL "<a href=\"https://github.com/larryli/PhotoTime\">https://github.com/larryli/PhotoTime</a>", -1, "SysLink", WS_TABSTOP, 40, 34, 150, 10
+  CONTROL IDR_ICO_MAIN, -1, "Static", SS_ICON|SS_CENTERIMAGE, 5, 10, 26, 26
+  CONTROL "PhotoTime v1.0", IDD_APPNAME, "Static", WS_GROUP, 40, 10, 150, 10
+  CONTROL "Copyright(C) Larry Li", IDD_COPYRIGHT, "Static", WS_GROUP, 40, 22, 150, 10
+  CONTROL "<a href=\"https://github.com/larryli/PhotoTime\">https://github.com/larryli/PhotoTime</a>", IDD_WEBSITE, "SysLink", WS_TABSTOP, 40, 34, 150, 10
 }
 
 IDR_MNU_MAIN MENUEX
@@ -92,7 +92,7 @@ STRINGTABLE
   IDS_LAST_WRITE, "修改时间"
   IDS_EXIF_DATETIME, "Exif 时间"
   IDS_FILENAME_DATETIME, "文件名时间"
-  IDS_LINK, "<a href=\"https://github.com/larryli/PhotoTime\">https://github.com/larryli/PhotoTime</a>"
+  IDS_LINK, "https://github.com/larryli/PhotoTime"
   IDS_SELECT_PHOTO_DIRECTORY, "请选择照片目录"
   IDS_FIND_START, "开始查找照片..."
   IDS_FINDING, "已找到 %d 张照片，继续查找..."

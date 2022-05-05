@@ -1,13 +1,13 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <wchar.h>
 #include <commctrl.h>
 
 #include "main.h"
 #include "statusbar.h"
+#include "utils.h"
 
-#define CX_SYSLINK 248
-
-#define NELEMS(a) (sizeof(a) / sizeof((a)[0]))
+static LONG scxSysLink = 248;
 
 void SizeStatusPanels(HWND hWndParent, HWND hWndStatusBar)
 {
@@ -15,18 +15,15 @@ void SizeStatusPanels(HWND hWndParent, HWND hWndStatusBar)
     GetClientRect(hWndParent, &rect);
     int cxSysLink = 0;
     HWND hWndSysLink = GetStatusBarSysLinkWnd(hWndStatusBar);
-    if (hWndSysLink != 0) {
-        cxSysLink = CX_SYSLINK;
-    }
+    if (hWndSysLink)
+        cxSysLink = scxSysLink;
     int partsize = (rect.right - rect.left - cxSysLink) / 2;
-    if (partsize < cxSysLink) {
+    if (partsize < cxSysLink)
         partsize = (rect.right - rect.left) / 3;
-    }
     int ptArray[] = {partsize,  partsize * 2, -1};
     SendMessage(hWndStatusBar, SB_SETPARTS, NELEMS(ptArray), (LPARAM)(LPINT)ptArray);
-    if (hWndSysLink != 0) {
-        MoveWindow(hWndSysLink, ptArray[1] + 2, 2, cxSysLink - 14, 16, TRUE);
-    }
+    if (hWndSysLink)
+        MoveWindow(hWndSysLink, ptArray[1] + 4, 2, cxSysLink - 16, 16, TRUE);
 }
 
 HWND CreateStatusBarWnd(HWND hWndParent, HINSTANCE hInst, TCHAR *szText, TCHAR *szUrl)
@@ -37,11 +34,15 @@ HWND CreateStatusBarWnd(HWND hWndParent, HINSTANCE hInst, TCHAR *szText, TCHAR *
                                             ID_STATUSBAR);
     if (!hWndStatusBar)
         return 0;
-    HWND hWndSysLink = CreateWindowEx(0, WC_LINK, szUrl, WS_VISIBLE | WS_CHILD,
+    TCHAR szBuf[MAX_PATH];
+    swprintf(szBuf, NELEMS(szBuf), L"<a href=\"%ls\">%ls</a>", szUrl, szUrl);
+    HWND hWndSysLink = CreateWindowEx(0, WC_LINK, szBuf, WS_VISIBLE | WS_CHILD,
                                       0, 0, 0, 0, hWndStatusBar, NULL, hInst, NULL);
-    if (hWndSysLink) {
+    if (hWndSysLink)
         SetWindowLongPtr(hWndStatusBar, GWLP_USERDATA, (LONG_PTR)hWndSysLink);
-    }
+    SIZE size;
+    if (GetTextExtentPoint32(GetDC(hWndSysLink), szUrl, wcslen(szUrl), &size))
+        scxSysLink = size.cx + 18;
     SizeStatusPanels(hWndParent, hWndStatusBar);
     return hWndStatusBar;
 }

@@ -5,6 +5,10 @@
 #define IDR_MNU_MAIN 2001
 #define IDR_MNU_CONTEXT  2002
 
+#define IDD_APPNAME 4001
+#define IDD_COPYRIGHT 4002
+#define IDD_WEBSITE 4003
+
 #define IDM_ABOUT 6001
 
 #define IDR_ICO_MAIN 8001
