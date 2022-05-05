@@ -310,7 +310,7 @@ static void OpenDirectory(HWND hwnd)
         return;
     if (LoadString(ghInstance, IDS_APPTITLE_FMT, szTitle, NELEMS(szTitle))) {
         TCHAR szBuf[MAX_PATH * 2] = {0};
-        _snwprintf(szBuf, NELEMS(szBuf), szTitle, szPath);
+        swprintf(szBuf, NELEMS(szBuf), szTitle, szPath);
         SetWindowText(hwnd, szBuf);
     }
 
@@ -368,12 +368,12 @@ static void UpdateStatus(UINT uSel, UINT uDef)
     if (iSelected) {
         if (LoadString(ghInstance, uSel, szFmt, NELEMS(szFmt))) {
             TCHAR szBuf[MAX_PATH];
-            _snwprintf(szBuf, NELEMS(szBuf), szFmt, gPhotos.iCount, iSelected);
+            swprintf(szBuf, NELEMS(szBuf), szFmt, gPhotos.iCount, iSelected);
             SetStatusBarText(ghWndStatusBar, 0, szBuf);
         }
     } else if (LoadString(ghInstance, uDef, szFmt, NELEMS(szFmt))) {
         TCHAR szBuf[MAX_PATH];
-        _snwprintf(szBuf, NELEMS(szBuf), szFmt, gPhotos.iCount);
+        swprintf(szBuf, NELEMS(szBuf), szFmt, gPhotos.iCount);
         SetStatusBarText(ghWndStatusBar, 0, szBuf);
     }
 }

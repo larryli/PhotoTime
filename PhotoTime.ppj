@@ -9,7 +9,7 @@ POC_PROJECT_MODE = Release#
 POC_PROJECT_RESULTDIR = .#
 POC_PROJECT_OUTPUTDIR = output#
 !if "$(POC_PROJECT_MODE)" == "Release"
-CCFLAGS = -Tx64-coff -std:C17 -MT -Ot -Ob1 -fp:precise -W1 -Gd -Ze -DUNICODE -D_UNICODE#
+CCFLAGS = -Tx64-coff -std:C17 -MT -Ot -Ox -Ob1 -fp:precise -W1 -Gd -Ze -DUNICODE -D_UNICODE#
 ASFLAGS = -AAMD64 -Gd#
 RCFLAGS = #
 LINKFLAGS = -machine:x64 -subsystem:windows kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib delayimp64.lib#
