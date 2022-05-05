@@ -3,8 +3,6 @@
 #include <wchar.h>
 #define __STDC_WANT_LIB_EXT1__ 1
 #include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
 
 #include "photo.h"
 #include "utils.h"
@@ -201,17 +199,12 @@ static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
     FileTimeToLocalFileTime(&(pWfd->ftLastWriteTime), &ftLocal);
     FileTimeToSystemTime(&ftLocal, pPhoto->pStFileTime);
 
-    LPSTR szExifTime;
-    if (GdipGetPropertyTagDateTime(szPath, &szExifTime)) {
-        pPhoto->pStExifTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, sizeof(SYSTEMTIME));
-        if (!(pPhoto->pStExifTime)) {
-            GlobalFree(szExifTime);
+    SYSTEMTIME stExifTime;
+    if (GdipGetTagSystemTime(szPath, &stExifTime)) {
+        pPhoto->pStExifTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
+        if (!(pPhoto->pStExifTime))
             goto failed;
-        }
-        sscanf(szExifTime, "%hu:%hu:%hu %hu:%hu:%hu",
-            &(pPhoto->pStExifTime->wYear), &(pPhoto->pStExifTime->wMonth), &(pPhoto->pStExifTime->wDay),
-            &(pPhoto->pStExifTime->wHour), &(pPhoto->pStExifTime->wMinute), &(pPhoto->pStExifTime->wSecond));
-        GlobalFree(szExifTime);
+        CopyMemory(pPhoto->pStExifTime, &stExifTime, sizeof(SYSTEMTIME));
     }
 
     return pPhoto;

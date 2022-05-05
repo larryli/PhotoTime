@@ -24,7 +24,7 @@ HWND CreateListViewWnd(HWND hWndParent, HINSTANCE hInst)
     HWND hWndLV = CreateWindowEx(WS_EX_CLIENTEDGE,
                                  WC_LISTVIEW,
                                  (LPTSTR) NULL,
-                                 WS_TABSTOP | WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_OWNERDATA,
+                                 WS_TABSTOP | WS_CHILD | WS_VISIBLE | LVS_SHOWSELALWAYS | LVS_REPORT | LVS_OWNERDATA,
                                  0, 0, 0, 0,
                                  hWndParent,
                                  (HMENU) ID_LISTVIEW,
@@ -32,7 +32,7 @@ HWND CreateListViewWnd(HWND hWndParent, HINSTANCE hInst)
                                  NULL);
     if (!hWndLV)
         return NULL;
-    ListView_SetExtendedListViewStyle(hWndLV, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+    ListView_SetExtendedListViewStyle(hWndLV, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_INFOTIP);
 
     TCHAR szBuf[MAX_PATH];
     struct {
@@ -130,6 +130,23 @@ void ListViewDispInfo(HWND hWndParent, LV_DISPINFO *lpdi)
 
 void ListViewOdFindItem(HWND hWndParent, LPNMLVFINDITEM lpfi)
 {
+}
+
+LRESULT ListViewCustomDraw(HWND hWndParent, LPNMLVCUSTOMDRAW lpcd)
+{
+    switch (lpcd->nmcd.dwDrawStage) {
+    case CDDS_PREPAINT:
+        return CDRF_NOTIFYITEMDRAW;
+    case CDDS_ITEMPREPAINT:
+        if (lpcd->nmcd.dwItemSpec % 2) {
+            lpcd->clrTextBk = GetSysColor(COLOR_BTNFACE);
+            return CDRF_NEWFONT;
+        }
+        break;
+    case CDDS_SUBITEM | CDDS_ITEMPREPAINT:
+        return CDRF_NEWFONT;
+    }
+    return CDRF_DODEFAULT;
 }
 
 static void FormatSystemTime(LPTSTR szBuf, int iMax, SYSTEMTIME *pSt)

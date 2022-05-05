@@ -43,9 +43,12 @@ static void PhotoView_OnSetPath(HWND hwnd, LPCTSTR szPath)
     LONG_PTR p = GetWindowLongPtr(hwnd, GWLP_USERDATA);
     if (p != -1)
         GdipDestoryImage((void *)p);
-    p = (LONG_PTR)GdipLoadImage(szPath);
-    if (!p)
-        p = -1;
+    if (szPath) {
+        p = (LONG_PTR)GdipLoadImage(szPath);
+        if (!p)
+            p = -1;
+    } else
+        p = 0;
     SetWindowLongPtr(hwnd, GWLP_USERDATA, p);
 }
 

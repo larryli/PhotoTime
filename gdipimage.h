@@ -1,6 +1,8 @@
 #pragma once
 // From fGdiPlusFlat.h
 
+#pragma comment (linker, "GdiPlus.lib")
+
 #ifndef GDIPVER
 #define GDIPVER 0x0100
 #endif
@@ -97,6 +99,18 @@ typedef enum {
 #define PropertyTagRotate90FlipNone 8
 #define PropertyTagOrientation 0x0112
 
+typedef struct {
+    GUID Guid;
+    ULONG NumberOfValues;
+    ULONG Type;
+    VOID *Value;
+} EncoderParameter;
+
+typedef struct {
+    UINT Count;
+    EncoderParameter Parameter[1];
+} EncoderParameters;
+
 #define PropertyTagTypeASCII 2
 #define PropertyTagTypeShort 3
 #define PropertyTagDateTime 0x0132
@@ -108,16 +122,42 @@ typedef struct {
     VOID* value;
 } PropertyItem;
 
+typedef struct {
+    CLSID Clsid;
+    GUID  FormatID;
+    const WCHAR *CodecName;
+    const WCHAR *DllName;
+    const WCHAR *FormatDescription;
+    const WCHAR *FilenameExtension;
+    const WCHAR *MimeType;
+    DWORD Flags;
+    DWORD Version;
+    DWORD SigCount;
+    DWORD SigSize;
+    const BYTE *SigPattern;
+    const BYTE *SigMask;
+} ImageCodecInfo;
+
 GpStatus WINAPI GdiplusStartup(ULONG_PTR *token, GdiplusStartupInput *input, GdiplusStartupOutput *output);
 VOID WINAPI GdiplusShutdown(ULONG_PTR token);
+
+void *WINGDIPAPI GdipAlloc(size_t size);
+void WINGDIPAPI GdipFree(void *ptr);
 
 GpStatus WINGDIPAPI GdipCreateFromHDC(HDC hdc, GpGraphics **graphics);
 GpStatus WINGDIPAPI GdipDrawImageRectI(GpGraphics *graphics, GpImage *image, INT x, INT y, INT width, INT height);
 GpStatus WINGDIPAPI GdipGetImageWidth(GpImage *image, UINT *width);
 GpStatus WINGDIPAPI GdipGetImageHeight(GpImage *image, UINT *height);
+GpStatus WINGDIPAPI GdipLoadImageFromFile(GDIPCONST WCHAR* filename, GpImage **image);
+GpStatus WINGDIPAPI GdipLoadImageFromStream(IStream* stream, GpImage **image);
+GpStatus WINGDIPAPI GdipSaveImageToFile(GpImage *image, GDIPCONST WCHAR *filename, GDIPCONST CLSID *clsidEncoder, GDIPCONST EncoderParameters *encoderParams);
+GpStatus WINGDIPAPI GdipSaveImageToStream(GpImage *image, IStream* stream, GDIPCONST CLSID* clsidEncoder, GDIPCONST EncoderParameters* encoderParams);
 GpStatus WINGDIPAPI GdipDisposeImage(GpImage *image);
 GpStatus WINGDIPAPI GdipDeleteGraphics(GpGraphics *graphics);
-GpStatus WINGDIPAPI GdipLoadImageFromFile(GDIPCONST WCHAR* filename, GpImage **image);
-GpStatus WINGDIPAPI GdipGetPropertyItemSize(GpImage *image, PROPID propId, UINT* size);
-GpStatus WINGDIPAPI GdipGetPropertyItem(GpImage *image, PROPID propId,UINT propSize, PropertyItem* buffer);
+GpStatus WINGDIPAPI GdipGetPropertyItemSize(GpImage *image, PROPID propId, UINT *size);
+GpStatus WINGDIPAPI GdipGetPropertyItem(GpImage *image, PROPID propId, UINT propSize, PropertyItem *buffer);
+GpStatus WINGDIPAPI GdipSetPropertyItem(GpImage *image, GDIPCONST PropertyItem *item);
 GpStatus WINGDIPAPI GdipImageRotateFlip(GpImage *image, RotateFlipType rfType);
+GpStatus WINGDIPAPI GdipGetImageRawFormat(GpImage *image, GUID *format);
+GpStatus WINGDIPAPI GdipGetImageEncodersSize(UINT *numEncoders, UINT *size);
+GpStatus WINGDIPAPI GdipGetImageEncoders(UINT numEncoders, UINT size, ImageCodecInfo *encoders);

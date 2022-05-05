@@ -378,6 +378,24 @@ static void UpdateStatus(UINT uSel, UINT uDef)
     }
 }
 
+static int ShowPhoto(int idx)
+{
+    if (!gPhotos.pPs || idx >= gPhotos.iCount)
+        return PhotoView_SetPath(ghWndPhotoView, NULL);
+    PHOTO *pPhoto = gPhotos.pPs[idx];
+    if (!pPhoto)
+        return PhotoView_SetPath(ghWndPhotoView, NULL);
+    TCHAR szPath[MAX_PATH] = L"";
+    if (pPhoto->szSubDirectory) {
+        CatFilePath(szPath, NELEMS(szPath), pPhoto->szSubDirectory, pPhoto->szFilename);
+        SetStatusBarText(ghWndStatusBar, 1, szPath);
+    } else
+        SetStatusBarText(ghWndStatusBar, 1, pPhoto->szFilename);
+    CatFilePath(szPath, NELEMS(szPath), gPhotos.szPath, pPhoto->szSubDirectory);
+    CatFilePath(szPath, NELEMS(szPath), szPath, pPhoto->szFilename);
+    return PhotoView_SetPath(ghWndPhotoView, szPath);
+}
+
 static LRESULT Main_OnNotify(HWND hwnd, int wParam, NMHDR *lParam)
 {
     switch (lParam->code) {
@@ -394,25 +412,13 @@ static LRESULT Main_OnNotify(HWND hwnd, int wParam, NMHDR *lParam)
             LPNM_LISTVIEW lpNmLv = (LPNM_LISTVIEW)lParam;
             if (lpNmLv->uChanged == LVIF_STATE) {
                 UpdateStatus(IDS_FIND_DONE_SEL, IDS_FIND_DONE);
-                if (lpNmLv->uNewState == 3) {
-                    if (gPhotos.pPs) {
-                        PHOTO *pPhoto = gPhotos.pPs[lpNmLv->iItem];
-                        if (pPhoto) {
-                            TCHAR szPath[MAX_PATH] = L"";
-                            if (pPhoto->szSubDirectory) {
-                                CatFilePath(szPath, NELEMS(szPath), pPhoto->szSubDirectory, pPhoto->szFilename);
-                                SetStatusBarText(ghWndStatusBar, 1, szPath);
-                            } else
-                                SetStatusBarText(ghWndStatusBar, 1, pPhoto->szFilename);
-                            CatFilePath(szPath, NELEMS(szPath), gPhotos.szPath, pPhoto->szSubDirectory);
-                            CatFilePath(szPath, NELEMS(szPath), szPath, pPhoto->szFilename);
-                            PhotoView_SetPath(ghWndPhotoView, szPath);
-                        }
-                    }
-                }
+                if (lpNmLv->uNewState == 3)
+                    ShowPhoto(lpNmLv->iItem);
             }
         }
         break;
+    case NM_CUSTOMDRAW:
+        return ListViewCustomDraw(hwnd, (LPNMLVCUSTOMDRAW)lParam);
     case LVN_ODFINDITEM:
         if (lParam->hwndFrom == ghWndListView)
             ListViewOdFindItem(hwnd, (LPNMLVFINDITEM)lParam);
