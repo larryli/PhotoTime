@@ -60,7 +60,8 @@ PhotoTime.exe: \
 	output\photoview.obj \
 	output\statusbar.obj \
 	output\toolbar.obj \
-	output\utils.obj
+	output\utils.obj \
+	output\parsest.obj
 	$(LINK) $(LINKFLAGS) -out:"$@" $**
 
 # 
@@ -148,6 +149,7 @@ output\about.obj: \
 output\photo.obj: \
 	photo.c \
 	gdip.h \
+	parsest.h \
 	photo.h \
 	utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
@@ -179,6 +181,14 @@ output\photoview.obj: \
 	main.h \
 	photoview.h \
 	utils.h
+	$(CC) $(CCFLAGS) "$!" -Fo"$@"
+
+# 
+# Build parsest.obj.
+# 
+output\parsest.obj: \
+	parsest.c \
+	parsest.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 .SILENT:

@@ -7,6 +7,7 @@
 #include "photo.h"
 #include "utils.h"
 #include "gdip.h"
+#include "parsest.h"
 
 #define PHOTOS_SIZE 100
 
@@ -199,12 +200,24 @@ static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
     FileTimeToLocalFileTime(&(pWfd->ftLastWriteTime), &ftLocal);
     FileTimeToSystemTime(&ftLocal, pPhoto->pStFileTime);
 
-    SYSTEMTIME stExifTime;
-    if (GdipGetTagSystemTime(szPath, &stExifTime)) {
+    SYSTEMTIME st;
+    if (GdipGetTagSystemTime(szPath, &st)) {
         pPhoto->pStExifTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
         if (!(pPhoto->pStExifTime))
             goto failed;
-        CopyMemory(pPhoto->pStExifTime, &stExifTime, sizeof(SYSTEMTIME));
+        CopyMemory(pPhoto->pStExifTime, &st, sizeof(SYSTEMTIME));
+    }
+    if (ParseStringToSystemTime(pPhoto->szFilename, &st)) {
+        if (st.wHour == (WORD)-1) {
+            st.wHour = pPhoto->pStFileTime->wHour;
+            st.wMinute = pPhoto->pStFileTime->wMinute;
+            st.wSecond = pPhoto->pStFileTime->wSecond;
+        } else if (st.wSecond == (WORD)-1)
+            st.wSecond = pPhoto->pStFileTime->wSecond;
+        pPhoto->pStFilenameTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
+        if (!(pPhoto->pStFilenameTime))
+            goto failed;
+        CopyMemory(pPhoto->pStFilenameTime, &st, sizeof(SYSTEMTIME));
     }
 
     return pPhoto;
