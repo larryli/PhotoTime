@@ -207,13 +207,17 @@ static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
             goto failed;
         CopyMemory(pPhoto->pStExifTime, &st, sizeof(SYSTEMTIME));
     }
-    if (ParseStringToSystemTime(pPhoto->szFilename, &st)) {
-        if (st.wHour == (WORD)-1) {
-            st.wHour = pPhoto->pStFileTime->wHour;
-            st.wMinute = pPhoto->pStFileTime->wMinute;
-            st.wSecond = pPhoto->pStFileTime->wSecond;
-        } else if (st.wSecond == (WORD)-1)
-            st.wSecond = pPhoto->pStFileTime->wSecond;
+    PARSEST_RESULT result;
+    if (ParseStringToSystemTime(pPhoto->szFilename, &st, &result)) {
+        PSYSTEMTIME pSt = (pPhoto->pStExifTime) ? pPhoto->pStExifTime : pPhoto->pStFileTime;
+        if (pSt) {
+            if (result == PARSEST_NO_TIME) {
+                st.wHour = pSt->wHour;
+                st.wMinute = pSt->wMinute;
+                st.wSecond = pSt->wSecond;
+            } else if (result == PARSEST_NO_SECOND)
+                st.wSecond = pSt->wSecond;
+        }
         pPhoto->pStFilenameTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
         if (!(pPhoto->pStFilenameTime))
             goto failed;
