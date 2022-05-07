@@ -4,6 +4,7 @@
 #include <wctype.h>
 
 #include "parsest.h"
+#include "utils.h"
 
 typedef enum {
     STATE_YEAR,
@@ -57,14 +58,8 @@ static BOOL ToSystemTime(LPCTSTR szStr, PSYSTEMTIME pSt)
     TCHAR szBuf[11];
     lstrcpyn(szBuf, szStr, 11);
     int t = _wtoi(szBuf);
-    LONGLONG ll;
-    ll = Int32x32To64(t, 10000000) + 116444736000000000;
-    FILETIME ftLocal, ft = {
-        .dwLowDateTime = (DWORD)ll,
-        .dwHighDateTime = ll >> 32,
-    };
-    FileTimeToLocalFileTime(&ft, &ftLocal);
-    return FileTimeToSystemTime(&ftLocal, pSt);
+    LONGLONG ft = Int32x32To64(t, 10000000) + 116444736000000000;
+    return FileTimeToLocalSystemTime((PFILETIME)&ft, pSt);
 }
 
 static BOOL IsValidDate(PSYSTEMTIME pSt)

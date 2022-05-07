@@ -112,6 +112,8 @@ void ListViewDispInfo(HWND hWndParent, LV_DISPINFO *lpdi)
         swprintf(szBuf, MAX_PATH, L"%lld", pPhoto->filesize.QuadPart);
         break;
     case 3:
+        if (!(pPhoto->pStFileTime))
+            return;
         FormatSystemTime(szBuf, MAX_PATH, pPhoto->pStFileTime);
         break;
     case 4:
@@ -138,13 +140,9 @@ LRESULT ListViewCustomDraw(HWND hWndParent, LPNMLVCUSTOMDRAW lpcd)
     case CDDS_PREPAINT:
         return CDRF_NOTIFYITEMDRAW;
     case CDDS_ITEMPREPAINT:
-        if (lpcd->nmcd.dwItemSpec % 2) {
+        if (lpcd->nmcd.dwItemSpec % 2)
             lpcd->clrTextBk = GetSysColor(COLOR_BTNFACE);
-            return CDRF_NEWFONT;
-        }
         break;
-    case CDDS_SUBITEM | CDDS_ITEMPREPAINT:
-        return CDRF_NEWFONT;
     }
     return CDRF_DODEFAULT;
 }

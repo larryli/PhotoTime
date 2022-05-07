@@ -196,9 +196,7 @@ static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
     pPhoto->pStFileTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
     if (!(pPhoto->pStFileTime))
         goto failed;
-    FILETIME ftLocal;
-    FileTimeToLocalFileTime(&(pWfd->ftLastWriteTime), &ftLocal);
-    FileTimeToSystemTime(&ftLocal, pPhoto->pStFileTime);
+    FileTimeToLocalSystemTime(&pWfd->ftLastWriteTime, pPhoto->pStFileTime);
 
     SYSTEMTIME st;
     if (GdipGetTagSystemTime(szPath, &st)) {
@@ -333,18 +331,36 @@ static int DescSize(const PHOTO **a, const PHOTO **b, void *d)
 
 static int AscFileTime(const PHOTO **a, const PHOTO **b, void *d)
 {
-    FILETIME ftA, ftB;
-    SystemTimeToFileTime((*a)->pStFileTime, &ftA);
-    SystemTimeToFileTime((*b)->pStFileTime, &ftB);
-    return CompareFileTime(&ftA, &ftB);
+    if ((*a)->pStFileTime == NULL) {
+        if ((*b)->pStFileTime == NULL)
+                return 0;
+            else
+                return -1;
+    } else if ((*b)->pStFileTime == NULL)
+        return 1;
+    else {
+        FILETIME ftA, ftB;
+        SystemTimeToFileTime((*a)->pStFileTime, &ftA);
+        SystemTimeToFileTime((*b)->pStFileTime, &ftB);
+        return CompareFileTime(&ftA, &ftB);
+    }
 }
 
 static int DescFileTime(const PHOTO **a, const PHOTO **b, void *d)
 {
-    FILETIME ftA, ftB;
-    SystemTimeToFileTime((*a)->pStFileTime, &ftA);
-    SystemTimeToFileTime((*b)->pStFileTime, &ftB);
-    return CompareFileTime(&ftB, &ftA);
+    if ((*a)->pStFileTime == NULL) {
+        if ((*b)->pStFileTime == NULL)
+                return 0;
+            else
+                return 1;
+    } else if ((*b)->pStFileTime == NULL)
+        return -1;
+    else {
+        FILETIME ftA, ftB;
+        SystemTimeToFileTime((*a)->pStFileTime, &ftA);
+        SystemTimeToFileTime((*b)->pStFileTime, &ftB);
+        return CompareFileTime(&ftB, &ftA);
+    }
 }
 
 static int AscExifTime(const PHOTO **a, const PHOTO **b, void *d)

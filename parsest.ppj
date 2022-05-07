@@ -23,7 +23,7 @@ INCLUDE = $(PellesCDir)\Include\Win;$(PellesCDir)\Include#
 LIB = $(PellesCDir)\Lib\Win64;$(PellesCDir)\Lib#
 POC_PROJECT_EXECUTOR = #
 POC_PROJECT_ARGUMENTS = #
-POC_PROJECT_WORKPATH = #
+POC_PROJECT_WORKPATH = .#
 POC_PROJECT_ZIPEXTRA = #
 !elseif "$(POC_PROJECT_MODE)" == "Debug"
 CCFLAGS = -Tx64-coff -Ot -W1 -std:C17 -Zi#
@@ -40,7 +40,7 @@ INCLUDE = $(PellesCDir)\Include\Win;$(PellesCDir)\Include#
 LIB = $(PellesCDir)\Lib\Win64;$(PellesCDir)\Lib#
 POC_PROJECT_EXECUTOR = #
 POC_PROJECT_ARGUMENTS = #
-POC_PROJECT_WORKPATH = #
+POC_PROJECT_WORKPATH = .#
 POC_PROJECT_ZIPEXTRA = #
 !else
 !error "Unknown mode."
@@ -50,7 +50,8 @@ POC_PROJECT_ZIPEXTRA = #
 # Build parsest.exe.
 # 
 parsest.exe: \
-	parsest\parsest.obj
+	parsest\parsest.obj \
+	parsest\utils.obj
 	$(LINK) $(LINKFLAGS) -out:"$@" $**
 
 # 
@@ -59,6 +60,14 @@ parsest.exe: \
 parsest\parsest.obj: \
 	parsest.c \
 	parsest.h
+	$(CC) $(CCFLAGS) "$!" -Fo"$@"
+
+# 
+# Build utils.obj.
+# 
+parsest\utils.obj: \
+	utils.c \
+	utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 .SILENT:

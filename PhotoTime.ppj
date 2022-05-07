@@ -56,12 +56,12 @@ PhotoTime.exe: \
 	output\listvisw.obj \
 	output\main.obj \
 	output\main.res \
+	output\parsest.obj \
 	output\photo.obj \
 	output\photoview.obj \
 	output\statusbar.obj \
 	output\toolbar.obj \
-	output\utils.obj \
-	output\parsest.obj
+	output\utils.obj
 	$(LINK) $(LINKFLAGS) -out:"$@" $**
 
 # 
@@ -188,7 +188,8 @@ output\photoview.obj: \
 # 
 output\parsest.obj: \
 	parsest.c \
-	parsest.h
+	parsest.h \
+	utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 .SILENT:

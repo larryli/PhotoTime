@@ -24,3 +24,19 @@ void GetFileExt(LPTSTR szExt, int size, LPCTSTR szPath)
     else
         *szExt = TEXT('\0');
 }
+
+BOOL FileTimeToLocalSystemTime(CONST FILETIME *pFt, PSYSTEMTIME pSt)
+{
+    FILETIME local;
+    if (FileTimeToLocalFileTime(pFt, &local))
+        return FileTimeToSystemTime(&local, pSt);
+    return FALSE;
+}
+
+BOOL LocalSystemTimeToFileTime(CONST SYSTEMTIME *pSt, PFILETIME pFt)
+{
+    FILETIME local;
+    if (SystemTimeToFileTime(pSt, &local))
+        return LocalFileTimeToFileTime(&local, pFt);
+    return FALSE;
+}
