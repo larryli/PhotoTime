@@ -12,11 +12,12 @@
 #define PHOTOS_SIZE 100
 
 PHOTOS gPhotos = {
+    .szPath = NULL,
     .pPs = NULL,
+    .ghPs = NULL,
     .iCount = 0,
+    .iPsMax = PHOTOS_SIZE,
 };
-static HGLOBAL ghPs = NULL;
-static int iPsMax = PHOTOS_SIZE;
 
 static void FreePhotos(void);
 static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub);
@@ -66,9 +67,8 @@ static BOOL FindPhotoWithSub(LPCTSTR szPath, LPCTSTR szSub)
                 CatFilePath(szSubs, NELEMS(szSubs), szSub, wfd.cFileName);
             else
                 lstrcpyn(szSubs, wfd.cFileName, MAX_PATH);
-            if (!FindPhotoWithSub(szFind, szSubs)) {
+            if (!FindPhotoWithSub(szFind, szSubs))
                 return FALSE;
-            }
             continue;
         }
         if (wfd.dwFileAttributes & FILE_ATTRIBUTE_READONLY)
@@ -80,17 +80,18 @@ static BOOL FindPhotoWithSub(LPCTSTR szPath, LPCTSTR szSub)
         PHOTO *pPhoto = NewPhoto(&wfd, szFilePath, szSub);
         if (!pPhoto)
             continue; // skip
-        if (gPhotos.iCount >= iPsMax) {
-            iPsMax += PHOTOS_SIZE;
+        if (gPhotos.iCount >= gPhotos.iPsMax) {
+            gPhotos.iPsMax += PHOTOS_SIZE;
             gPhotos.pPs = NULL;
-            GlobalUnlock(ghPs);
-            HGLOBAL h = GlobalReAlloc(ghPs, sizeof(PHOTO *) * iPsMax, GMEM_MOVEABLE | GMEM_ZEROINIT);
+            GlobalUnlock(gPhotos.ghPs);
+            HGLOBAL h = GlobalReAlloc(gPhotos.ghPs, sizeof(PHOTO *) * gPhotos.iPsMax,
+                                      GMEM_MOVEABLE | GMEM_ZEROINIT);
             if (!h) {
                 FreePhoto(pPhoto);
                 return FALSE;
             }
-            ghPs = h;
-            gPhotos.pPs = (PHOTO **)GlobalLock(ghPs);
+            gPhotos.ghPs = h;
+            gPhotos.pPs = (PHOTO **)GlobalLock(gPhotos.ghPs);
         }
         gPhotos.pPs[gPhotos.iCount++] = pPhoto;
     }
@@ -99,20 +100,19 @@ static BOOL FindPhotoWithSub(LPCTSTR szPath, LPCTSTR szSub)
 
 BOOL FindPhoto(LPCTSTR szPath)
 {
-    if (gPhotos.pPs)
-        FreePhotos();
+    FreePhotos();
     int size = lstrlen(szPath) + 1;
     gPhotos.szPath = GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, sizeof(TCHAR) * size);
     if (!(gPhotos.szPath))
         return FALSE;
     lstrcpyn(gPhotos.szPath, szPath, size);
-    ghPs = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(PHOTO *) * iPsMax);
-    if (!ghPs) {
+    gPhotos.ghPs = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(PHOTO *) * gPhotos.iPsMax);
+    if (!gPhotos.ghPs) {
         GlobalFree(gPhotos.szPath);
         gPhotos.szPath = NULL;
         return FALSE;
     }
-    gPhotos.pPs = (PHOTO **)GlobalLock(ghPs);
+    gPhotos.pPs = (PHOTO **)GlobalLock(gPhotos.ghPs);
     if (FindPhotoWithSub(szPath, NULL))
         return TRUE;
     // FreePhotos();
@@ -156,18 +156,22 @@ void SortPhotos(int idx, BOOL isAscending)
 
 static void FreePhotos(void)
 {
-    for (int i = 0; i < gPhotos.iCount; i++)
-        FreePhoto(gPhotos.pPs[i]);
-    gPhotos.pPs = NULL;
-    gPhotos.iCount = 0;
-    GlobalUnlock(ghPs);
-    GlobalFree(ghPs);
-    ghPs = NULL;
     if (gPhotos.szPath) {
         GlobalFree(gPhotos.szPath);
         gPhotos.szPath = NULL;
     }
-    iPsMax = PHOTOS_SIZE;
+    if (gPhotos.pPs) {
+        for (int i = 0; i < gPhotos.iCount; i++)
+            FreePhoto(gPhotos.pPs[i]);
+        gPhotos.pPs = NULL;
+    }
+    gPhotos.iCount = 0;
+    if (gPhotos.ghPs) {
+        GlobalUnlock(gPhotos.ghPs);
+        GlobalFree(gPhotos.ghPs);
+        gPhotos.ghPs = NULL;
+    }
+    gPhotos.iPsMax = PHOTOS_SIZE;
 }
 
 static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
@@ -242,8 +246,16 @@ static void FreePhoto(PHOTO *pPhoto)
 {
     if (!pPhoto)
         return;
-    GlobalFree(pPhoto->szFilename);
-    GlobalFree(pPhoto->szSubDirectory);
+    if (pPhoto->szFilename)
+        GlobalFree(pPhoto->szFilename);
+    if (pPhoto->szSubDirectory)
+        GlobalFree(pPhoto->szSubDirectory);
+    if (pPhoto->pStFileTime)
+        GlobalFree(pPhoto->pStFileTime);
+    if (pPhoto->pStExifTime)
+        GlobalFree(pPhoto->pStExifTime);
+    if (pPhoto->pStFilenameTime)
+        GlobalFree(pPhoto->pStFilenameTime);
     GlobalFree(pPhoto);
 }
 
@@ -430,4 +442,3 @@ static int DescFilenameTime(const PHOTO **a, const PHOTO **b, void *d)
         return CompareFileTime(&ftB, &ftA);
     }
 }
-

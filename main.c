@@ -501,12 +501,20 @@ static void Lock(HWND hwnd)
 {
     bLock = TRUE;
     EnableMenuItem(GetMenu(hwnd), IDM_OPEN, MF_DISABLED);
+    EnableMenuItem(GetMenu(hwnd), IDM_REFRESH, MF_DISABLED);
+    EnableMenuItem(GetMenu(hwnd), IDM_AUTOPROC, MF_DISABLED);
     ToolBar_EnableButton(ghWndToolBar, IDM_OPEN, FALSE);
+    ToolBar_EnableButton(ghWndToolBar, IDM_REFRESH, FALSE);
+    ToolBar_EnableButton(ghWndToolBar, IDM_AUTOPROC, FALSE);
 }
 
 static void UnLock(HWND hwnd)
 {
     bLock = FALSE;
     EnableMenuItem(GetMenu(hwnd), IDM_OPEN, MF_ENABLED);
+    EnableMenuItem(GetMenu(hwnd), IDM_REFRESH, MF_ENABLED);
+    EnableMenuItem(GetMenu(hwnd), IDM_AUTOPROC, MF_ENABLED);
     ToolBar_EnableButton(ghWndToolBar, IDM_OPEN, TRUE);
+    ToolBar_EnableButton(ghWndToolBar, IDM_REFRESH, TRUE);
+    ToolBar_EnableButton(ghWndToolBar, IDM_AUTOPROC, TRUE);
 }

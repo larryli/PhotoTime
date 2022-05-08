@@ -34,7 +34,10 @@ HWND CreateListViewWnd(HWND hWndParent, HINSTANCE hInst)
         return NULL;
     ListView_SetExtendedListViewStyle(hWndLV, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_INFOTIP);
 
-    TCHAR szBuf[MAX_PATH];
+    int cxTime = 130;
+    SIZE size;
+    if (GetTextExtentPoint32(GetDC(hWndLV), L"1234-67-90 12:45:78", 18, &size))
+        cxTime = size.cx + 6;
     struct {
         UINT uID;
         int cx;
@@ -42,10 +45,11 @@ HWND CreateListViewWnd(HWND hWndParent, HINSTANCE hInst)
         {.uID = IDS_FILENAME, .cx = 180},
         {.uID = IDS_SUBDIRECTORY, .cx = 120},
         {.uID = IDS_SIZE, .cx = 80},
-        {.uID = IDS_LAST_WRITE, .cx = 130},
-        {.uID = IDS_EXIF_DATETIME, .cx = 130},
-        {.uID = IDS_FILENAME_DATETIME, .cx = 130},
+        {.uID = IDS_LAST_WRITE, .cx = cxTime},
+        {.uID = IDS_EXIF_DATETIME, .cx = cxTime},
+        {.uID = IDS_FILENAME_DATETIME, .cx = cxTime},
     };
+    TCHAR szBuf[MAX_PATH];
     LV_COLUMN lvc = {
         .mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM,
         .fmt = LVCFMT_LEFT,
@@ -71,16 +75,10 @@ int ListViewGetColumnWidth(HWND hWndLV)
 
 void ListViewColumnClick(HWND hWndParent, NMLISTVIEW *nmlv)
 {
-    HWND hListView = nmlv->hdr.hwndFrom;
-    INT nColumnIndex = nmlv->iSubItem;
-    if (lastnColumnIndex == nColumnIndex) {
-        bAscendingOrder = !bAscendingOrder;
-    } else {
-        bAscendingOrder = FALSE;
-    }
-    ListView_SetHeaderSortImage(hListView, nColumnIndex, bAscendingOrder);
-    lastnColumnIndex = nColumnIndex;
-    SendMessage(hWndParent, WM_SORT_START, (WPARAM)nColumnIndex, (LPARAM)bAscendingOrder);
+    bAscendingOrder = (lastnColumnIndex == nmlv->iSubItem) ? !bAscendingOrder : FALSE;
+    ListView_SetHeaderSortImage(nmlv->hdr.hwndFrom, nmlv->iSubItem, bAscendingOrder);
+    lastnColumnIndex = nmlv->iSubItem;
+    SendMessage(hWndParent, WM_SORT_START, (WPARAM)nmlv->iSubItem, (LPARAM)bAscendingOrder);
 }
 
 void ListViewCleanSort(HWND hListView)
@@ -140,6 +138,13 @@ LRESULT ListViewCustomDraw(HWND hWndParent, LPNMLVCUSTOMDRAW lpcd)
     case CDDS_PREPAINT:
         return CDRF_NOTIFYITEMDRAW;
     case CDDS_ITEMPREPAINT:
+        if ((int)lpcd->nmcd.dwItemSpec >= gPhotos.iCount)
+            lpcd->clrText = GetSysColor(COLOR_GRAYTEXT);
+        else if (gPhotos.pPs) {
+            PHOTO *pPhoto = gPhotos.pPs[(int)lpcd->nmcd.dwItemSpec];
+            if (!pPhoto || !(pPhoto->pStFileTime))
+                lpcd->clrText = RGB(255, 0 , 0); // RED
+        }
         if (lpcd->nmcd.dwItemSpec % 2)
             lpcd->clrTextBk = GetSysColor(COLOR_BTNFACE);
         break;

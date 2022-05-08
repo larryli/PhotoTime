@@ -12,7 +12,9 @@ typedef struct {
 typedef struct {
     LPTSTR szPath;
     PHOTO **pPs;
+    HGLOBAL ghPs;
     int iCount;
+    int iPsMax;
 } PHOTOS;
 
 extern PHOTOS gPhotos;

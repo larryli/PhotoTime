@@ -24,6 +24,9 @@ IDR_MNU_MAIN MENUEX
   POPUP "文件(&F)", 0, 0, 0
   {
     MENUITEM "打开文件夹(&O)", IDM_OPEN, 0, 0
+    MENUITEM "重新载入(&R)", IDM_REFRESH, 0, 0
+    MENUITEM "", 0, 0|MFT_SEPARATOR, 0
+    MENUITEM "自动处理(&A)", IDM_AUTOPROC, 0, 0
     MENUITEM "", 0, 0|MFT_SEPARATOR, 0
     MENUITEM "退出(&X)", IDM_EXIT, 0, 0
   }
@@ -107,5 +110,7 @@ STRINGTABLE
   IDS_FIND_FAILED_SEL, "查找照片失败，已找到 %d 张，当前选择 %d 张"
   IDS_LOAD_PHOTO_FAILED, "无法载入照片！"
   IDS_SHOW_PHOTO_FAILED, "显示照片失败。"
+  IDS_REFRESH, "重新载入"
+  IDS_AUTOPROC, "自动处理"
 }
 
