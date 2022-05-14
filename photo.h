@@ -11,13 +11,13 @@ typedef struct {
 
 typedef struct {
     LPTSTR szPath;
-    PHOTO **pPs;
-    HGLOBAL ghPs;
+    PHOTO **pPhotos;
+    HGLOBAL hPhotos;
     int iCount;
-    int iPsMax;
-} PHOTOS;
+    int iSize;
+} PHOTOLIB;
 
-extern PHOTOS gPhotos;
+extern PHOTOLIB gPhotoLib;
 
 BOOL FindPhoto(LPCTSTR szPath);
 void SortPhotos(int idx, BOOL isAscending);

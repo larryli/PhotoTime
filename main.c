@@ -368,21 +368,21 @@ static void UpdateStatus(UINT uSel, UINT uDef)
     if (iSelected) {
         if (LoadString(ghInstance, uSel, szFmt, NELEMS(szFmt))) {
             TCHAR szBuf[MAX_PATH];
-            swprintf(szBuf, NELEMS(szBuf), szFmt, gPhotos.iCount, iSelected);
+            swprintf(szBuf, NELEMS(szBuf), szFmt, gPhotoLib.iCount, iSelected);
             SetStatusBarText(ghWndStatusBar, 0, szBuf);
         }
     } else if (LoadString(ghInstance, uDef, szFmt, NELEMS(szFmt))) {
         TCHAR szBuf[MAX_PATH];
-        swprintf(szBuf, NELEMS(szBuf), szFmt, gPhotos.iCount);
+        swprintf(szBuf, NELEMS(szBuf), szFmt, gPhotoLib.iCount);
         SetStatusBarText(ghWndStatusBar, 0, szBuf);
     }
 }
 
 static int ShowPhoto(int idx)
 {
-    if (!gPhotos.pPs || idx >= gPhotos.iCount)
+    if (!gPhotoLib.pPhotos || idx >= gPhotoLib.iCount)
         return PhotoView_SetPath(ghWndPhotoView, NULL);
-    PHOTO *pPhoto = gPhotos.pPs[idx];
+    PHOTO *pPhoto = gPhotoLib.pPhotos[idx];
     if (!pPhoto)
         return PhotoView_SetPath(ghWndPhotoView, NULL);
     TCHAR szPath[MAX_PATH] = L"";
@@ -391,7 +391,7 @@ static int ShowPhoto(int idx)
         SetStatusBarText(ghWndStatusBar, 1, szPath);
     } else
         SetStatusBarText(ghWndStatusBar, 1, pPhoto->szFilename);
-    CatFilePath(szPath, NELEMS(szPath), gPhotos.szPath, pPhoto->szSubDirectory);
+    CatFilePath(szPath, NELEMS(szPath), gPhotoLib.szPath, pPhoto->szSubDirectory);
     CatFilePath(szPath, NELEMS(szPath), szPath, pPhoto->szFilename);
     return PhotoView_SetPath(ghWndPhotoView, szPath);
 }
@@ -436,8 +436,8 @@ static LRESULT Main_OnNotify(HWND hwnd, int wParam, NMHDR *lParam)
 
 static void Main_OnTimer(HWND hwnd, UINT id)
 {
-    if (id == ID_TIMER_FIND && gPhotos.iCount > 0) {
-        ListView_SetItemCount(ghWndListView, gPhotos.iCount);
+    if (id == ID_TIMER_FIND && gPhotoLib.iCount > 0) {
+        ListView_SetItemCount(ghWndListView, gPhotoLib.iCount);
         UpdateStatus(IDS_FINDING_SEL, IDS_FINDING);
     }
 }
@@ -451,7 +451,7 @@ static void Main_OnDestroy(HWND hwnd)
 static void Main_OnFindDone(HWND hwnd, BOOL b)
 {
     KillTimer(hwnd, ID_TIMER_FIND);
-    ListView_SetItemCount(ghWndListView, gPhotos.iCount);
+    ListView_SetItemCount(ghWndListView, gPhotoLib.iCount);
     if (b)
         UpdateStatus(IDS_FIND_DONE_SEL, IDS_FIND_DONE);
     else
@@ -476,9 +476,9 @@ static void SortThread(PVOID pVoid)
 
 static void Main_OnSortStart(HWND hwnd, int columnIndex, BOOL isAscending)
 {
-    if (!(gPhotos.pPs))
+    if (!(gPhotoLib.pPhotos))
         return;
-    if (gPhotos.iCount <= 1)
+    if (gPhotoLib.iCount <= 1)
         return;
     Lock(hwnd);
     SORT_THREAD_PARAMS *pParams = (SORT_THREAD_PARAMS *)GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, sizeof(SORT_THREAD_PARAMS));
@@ -493,7 +493,7 @@ static void Main_OnSortStart(HWND hwnd, int columnIndex, BOOL isAscending)
 
 static void Main_OnSortDone(HWND hwnd)
 {
-    ListView_RedrawItems(ghWndListView, 0, gPhotos.iCount - 1);
+    ListView_RedrawItems(ghWndListView, 0, gPhotoLib.iCount - 1);
     UnLock(hwnd);
 }
 

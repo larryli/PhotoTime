@@ -9,14 +9,16 @@
 #include "gdip.h"
 #include "parsest.h"
 
+#ifndef PHOTOS_SIZE
 #define PHOTOS_SIZE 100
+#endif
 
-PHOTOS gPhotos = {
+PHOTOLIB gPhotoLib = {
     .szPath = NULL,
-    .pPs = NULL,
-    .ghPs = NULL,
+    .pPhotos = NULL,
+    .hPhotos = 0,
     .iCount = 0,
-    .iPsMax = PHOTOS_SIZE,
+    .iSize = 0,
 };
 
 static void FreePhotos(void);
@@ -80,20 +82,20 @@ static BOOL FindPhotoWithSub(LPCTSTR szPath, LPCTSTR szSub)
         PHOTO *pPhoto = NewPhoto(&wfd, szFilePath, szSub);
         if (!pPhoto)
             continue; // skip
-        if (gPhotos.iCount >= gPhotos.iPsMax) {
-            gPhotos.iPsMax += PHOTOS_SIZE;
-            gPhotos.pPs = NULL;
-            GlobalUnlock(gPhotos.ghPs);
-            HGLOBAL h = GlobalReAlloc(gPhotos.ghPs, sizeof(PHOTO *) * gPhotos.iPsMax,
+        if (gPhotoLib.iCount >= gPhotoLib.iSize) {
+            gPhotoLib.iSize += PHOTOS_SIZE;
+            gPhotoLib.pPhotos = NULL;
+            GlobalUnlock(gPhotoLib.hPhotos);
+            HGLOBAL h = GlobalReAlloc(gPhotoLib.hPhotos, sizeof(PHOTO *) * gPhotoLib.iSize,
                                       GMEM_MOVEABLE | GMEM_ZEROINIT);
             if (!h) {
                 FreePhoto(pPhoto);
                 return FALSE;
             }
-            gPhotos.ghPs = h;
-            gPhotos.pPs = (PHOTO **)GlobalLock(gPhotos.ghPs);
+            gPhotoLib.hPhotos = h;
+            gPhotoLib.pPhotos = (PHOTO **)GlobalLock(gPhotoLib.hPhotos);
         }
-        gPhotos.pPs[gPhotos.iCount++] = pPhoto;
+        gPhotoLib.pPhotos[gPhotoLib.iCount++] = pPhoto;
     }
     return TRUE;
 }
@@ -102,17 +104,18 @@ BOOL FindPhoto(LPCTSTR szPath)
 {
     FreePhotos();
     int size = lstrlen(szPath) + 1;
-    gPhotos.szPath = GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, sizeof(TCHAR) * size);
-    if (!(gPhotos.szPath))
+    gPhotoLib.szPath = GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, sizeof(TCHAR) * size);
+    if (!(gPhotoLib.szPath))
         return FALSE;
-    lstrcpyn(gPhotos.szPath, szPath, size);
-    gPhotos.ghPs = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(PHOTO *) * gPhotos.iPsMax);
-    if (!gPhotos.ghPs) {
-        GlobalFree(gPhotos.szPath);
-        gPhotos.szPath = NULL;
+    lstrcpyn(gPhotoLib.szPath, szPath, size);
+    gPhotoLib.iSize = PHOTOS_SIZE;
+    gPhotoLib.hPhotos = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(PHOTO *) * gPhotoLib.iSize);
+    if (!gPhotoLib.hPhotos) {
+        GlobalFree(gPhotoLib.szPath);
+        gPhotoLib.szPath = NULL;
         return FALSE;
     }
-    gPhotos.pPs = (PHOTO **)GlobalLock(gPhotos.ghPs);
+    gPhotoLib.pPhotos = (PHOTO **)GlobalLock(gPhotoLib.hPhotos);
     if (FindPhotoWithSub(szPath, NULL))
         return TRUE;
     // FreePhotos();
@@ -150,28 +153,28 @@ void SortPhotos(int idx, BOOL isAscending)
 {
     if (idx < (int)NELEMS(cmps)) {
         __cmpfunc_s *cmpfunc = isAscending ? cmps[idx].asc : cmps[idx].desc;
-        (void)qsort_s(gPhotos.pPs, gPhotos.iCount, sizeof(PHOTO *), cmpfunc, NULL);
+        (void)qsort_s(gPhotoLib.pPhotos, gPhotoLib.iCount, sizeof(PHOTO *), cmpfunc, NULL);
     }
 }
 
 static void FreePhotos(void)
 {
-    if (gPhotos.szPath) {
-        GlobalFree(gPhotos.szPath);
-        gPhotos.szPath = NULL;
+    if (gPhotoLib.szPath) {
+        GlobalFree(gPhotoLib.szPath);
+        gPhotoLib.szPath = NULL;
     }
-    if (gPhotos.pPs) {
-        for (int i = 0; i < gPhotos.iCount; i++)
-            FreePhoto(gPhotos.pPs[i]);
-        gPhotos.pPs = NULL;
+    if (gPhotoLib.pPhotos) {
+        for (int i = 0; i < gPhotoLib.iCount; i++)
+            FreePhoto(gPhotoLib.pPhotos[i]);
+        gPhotoLib.pPhotos = NULL;
     }
-    gPhotos.iCount = 0;
-    if (gPhotos.ghPs) {
-        GlobalUnlock(gPhotos.ghPs);
-        GlobalFree(gPhotos.ghPs);
-        gPhotos.ghPs = NULL;
+    gPhotoLib.iCount = 0;
+    if (gPhotoLib.hPhotos) {
+        GlobalUnlock(gPhotoLib.hPhotos);
+        GlobalFree(gPhotoLib.hPhotos);
+        gPhotoLib.hPhotos = NULL;
     }
-    gPhotos.iPsMax = PHOTOS_SIZE;
+    gPhotoLib.iSize = 0;
 }
 
 static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)

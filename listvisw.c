@@ -92,11 +92,11 @@ void ListViewDispInfo(HWND hWndParent, LV_DISPINFO *lpdi)
 {
     if (!(lpdi->item.mask & LVIF_TEXT))
         return;
-    if (lpdi->item.iItem >= gPhotos.iCount)
+    if (lpdi->item.iItem >= gPhotoLib.iCount)
         return;
-    if (!(gPhotos.pPs))
+    if (!(gPhotoLib.pPhotos))
         return;
-    PHOTO *pPhoto = gPhotos.pPs[lpdi->item.iItem];
+    PHOTO *pPhoto = gPhotoLib.pPhotos[lpdi->item.iItem];
     TCHAR szBuf[MAX_PATH] = L"";
     switch (lpdi->item.iSubItem) {
     case 0:
@@ -138,10 +138,10 @@ LRESULT ListViewCustomDraw(HWND hWndParent, LPNMLVCUSTOMDRAW lpcd)
     case CDDS_PREPAINT:
         return CDRF_NOTIFYITEMDRAW;
     case CDDS_ITEMPREPAINT:
-        if ((int)lpcd->nmcd.dwItemSpec >= gPhotos.iCount)
+        if ((int)lpcd->nmcd.dwItemSpec >= gPhotoLib.iCount)
             lpcd->clrText = GetSysColor(COLOR_GRAYTEXT);
-        else if (gPhotos.pPs) {
-            PHOTO *pPhoto = gPhotos.pPs[(int)lpcd->nmcd.dwItemSpec];
+        else if (gPhotoLib.pPhotos) {
+            PHOTO *pPhoto = gPhotoLib.pPhotos[(int)lpcd->nmcd.dwItemSpec];
             if (!pPhoto || !(pPhoto->pStFileTime))
                 lpcd->clrText = RGB(255, 0 , 0); // RED
         }
