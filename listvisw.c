@@ -103,8 +103,8 @@ void ListViewDispInfo(HWND hWndParent, LV_DISPINFO *lpdi)
         lstrcpyn(lpdi->item.pszText, pPhoto->szFilename, lpdi->item.cchTextMax);
         return;
     case 1:
-        if (pPhoto->szSubDirectory)
-            lstrcpyn(lpdi->item.pszText, pPhoto->szSubDirectory, lpdi->item.cchTextMax);
+        if (pPhoto->szSubPath)
+            lstrcpyn(lpdi->item.pszText, pPhoto->szSubPath, lpdi->item.cchTextMax);
         return;
     case 2:
         swprintf(szBuf, MAX_PATH, L"%lld", pPhoto->filesize.QuadPart);

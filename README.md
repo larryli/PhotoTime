@@ -1,6 +1,6 @@
 # PhotoTime 照片时间修改器
 
-[JpgTime](http://www.muralpix.com/jpgtime/) 功能增强
+[JpgTime](http://www.muralpix.com/jpgtime/) 功能增强，仅支持 Windows 7 x64 以上版本。
 
 ## 功能
 

@@ -2,7 +2,7 @@
 
 typedef struct {
     LPTSTR szFilename;
-    LPTSTR szSubDirectory;
+    LPTSTR szSubPath;
     LARGE_INTEGER filesize;
     PSYSTEMTIME pStFileTime;
     PSYSTEMTIME pStExifTime;

@@ -191,10 +191,10 @@ static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
 
     if (szSub) {
         size = lstrlen(szSub) + 1;
-        pPhoto->szSubDirectory = (LPTSTR)GlobalAlloc(GMEM_FIXED, sizeof(TCHAR) * size);
-        if (!(pPhoto->szSubDirectory))
+        pPhoto->szSubPath = (LPTSTR)GlobalAlloc(GMEM_FIXED, sizeof(TCHAR) * size);
+        if (!(pPhoto->szSubPath))
             goto failed;
-        lstrcpyn(pPhoto->szSubDirectory, szSub, size);
+        lstrcpyn(pPhoto->szSubPath, szSub, size);
     }
 
     pPhoto->filesize.LowPart = pWfd->nFileSizeLow;
@@ -233,8 +233,8 @@ static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
 failed:
     if (pPhoto->szFilename)
         GlobalFree(pPhoto->szFilename);
-    if (pPhoto->szSubDirectory)
-        GlobalFree(pPhoto->szSubDirectory);
+    if (pPhoto->szSubPath)
+        GlobalFree(pPhoto->szSubPath);
     if (pPhoto->pStFileTime)
         GlobalFree(pPhoto->pStFileTime);
     if (pPhoto->pStExifTime)
@@ -251,8 +251,8 @@ static void FreePhoto(PHOTO *pPhoto)
         return;
     if (pPhoto->szFilename)
         GlobalFree(pPhoto->szFilename);
-    if (pPhoto->szSubDirectory)
-        GlobalFree(pPhoto->szSubDirectory);
+    if (pPhoto->szSubPath)
+        GlobalFree(pPhoto->szSubPath);
     if (pPhoto->pStFileTime)
         GlobalFree(pPhoto->pStFileTime);
     if (pPhoto->pStExifTime)
@@ -300,28 +300,28 @@ static int DescFilename(const PHOTO **a, const PHOTO **b, void *d)
 
 static int AscSubDirectory(const PHOTO **a, const PHOTO **b, void *d)
 {
-    if ((*a)->szSubDirectory == NULL) {
-        if ((*b)->szSubDirectory == NULL)
+    if ((*a)->szSubPath == NULL) {
+        if ((*b)->szSubPath == NULL)
             return 0;
         else
             return -1;
-    } else if ((*b)->szSubDirectory == NULL)
+    } else if ((*b)->szSubPath == NULL)
         return 1;
     else
-        return _wcsicmp((*a)->szSubDirectory, (*b)->szSubDirectory);
+        return _wcsicmp((*a)->szSubPath, (*b)->szSubPath);
 }
 
 static int DescSubDirectory(const PHOTO **a, const PHOTO **b, void *d)
 {
-    if ((*a)->szSubDirectory == NULL) {
-        if ((*b)->szSubDirectory == NULL)
+    if ((*a)->szSubPath == NULL) {
+        if ((*b)->szSubPath == NULL)
             return 0;
         else
             return 1;
-    } else if ((*b)->szSubDirectory == NULL)
+    } else if ((*b)->szSubPath == NULL)
         return -1;
     else
-        return _wcsicmp((*b)->szSubDirectory, (*a)->szSubDirectory);
+        return _wcsicmp((*b)->szSubPath, (*a)->szSubPath);
 }
 
 static int AscSize(const PHOTO **a, const PHOTO **b, void *d)

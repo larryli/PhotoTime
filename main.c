@@ -386,12 +386,12 @@ static int ShowPhoto(int idx)
     if (!pPhoto)
         return PhotoView_SetPath(ghWndPhotoView, NULL);
     TCHAR szPath[MAX_PATH] = L"";
-    if (pPhoto->szSubDirectory) {
-        CatFilePath(szPath, NELEMS(szPath), pPhoto->szSubDirectory, pPhoto->szFilename);
+    if (pPhoto->szSubPath) {
+        CatFilePath(szPath, NELEMS(szPath), pPhoto->szSubPath, pPhoto->szFilename);
         SetStatusBarText(ghWndStatusBar, 1, szPath);
     } else
         SetStatusBarText(ghWndStatusBar, 1, pPhoto->szFilename);
-    CatFilePath(szPath, NELEMS(szPath), gPhotoLib.szPath, pPhoto->szSubDirectory);
+    CatFilePath(szPath, NELEMS(szPath), gPhotoLib.szPath, pPhoto->szSubPath);
     CatFilePath(szPath, NELEMS(szPath), szPath, pPhoto->szFilename);
     return PhotoView_SetPath(ghWndPhotoView, szPath);
 }
@@ -412,7 +412,7 @@ static LRESULT Main_OnNotify(HWND hwnd, int wParam, NMHDR *lParam)
             LPNM_LISTVIEW lpNmLv = (LPNM_LISTVIEW)lParam;
             if (lpNmLv->uChanged == LVIF_STATE) {
                 UpdateStatus(IDS_FIND_DONE_SEL, IDS_FIND_DONE);
-                if (lpNmLv->uNewState == 3)
+                if (lpNmLv->uNewState & (LVIS_FOCUSED | LVIS_SELECTED))
                     ShowPhoto(lpNmLv->iItem);
             }
         }
