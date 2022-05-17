@@ -48,9 +48,10 @@ IDR_MNU_CONTEXT MENUEX
 {
   POPUP "Context Menu", 0, 0, 0
   {
-    MENUITEM "关于(&A)", IDM_ABOUT, 0, 0
+    MENUITEM "打开(&O)", IDM_ITEM_OPEN, 0, 0
+    MENUITEM "在文件夹中显示(&F)", IDM_ITEM_FOLDER, 0, 0
     MENUITEM "", 0, 0|MFT_SEPARATOR, 0
-    MENUITEM "退出(&X)", IDM_EXIT, 0, 0
+    MENUITEM "属性(&P)", IDM_ITEM_PROPERTIES, 0, 0
   }
 }
 

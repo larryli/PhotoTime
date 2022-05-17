@@ -260,3 +260,15 @@ end:
     GdipDisposeImage(image);
     return bRet;
 }
+
+BOOL GdipGetSize(void *data, SIZE *size)
+{
+    GpImage *image = (GpImage *)data;
+    if (!image)
+        return FALSE;
+    if (Ok != GdipGetImageWidth(image, &size->cx))
+        return FALSE;
+    if (Ok != GdipGetImageHeight(image, &size->cy))
+        return FALSE;
+    return TRUE;
+}

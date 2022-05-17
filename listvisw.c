@@ -97,6 +97,8 @@ void ListViewDispInfo(HWND hWndParent, LV_DISPINFO *lpdi)
     if (!(gPhotoLib.pPhotos))
         return;
     PHOTO *pPhoto = gPhotoLib.pPhotos[lpdi->item.iItem];
+    if (!pPhoto)
+        return;
     TCHAR szBuf[MAX_PATH] = L"";
     switch (lpdi->item.iSubItem) {
     case 0:
@@ -126,10 +128,6 @@ void ListViewDispInfo(HWND hWndParent, LV_DISPINFO *lpdi)
         break;
     }
     lstrcpyn(lpdi->item.pszText, szBuf, lpdi->item.cchTextMax);
-}
-
-void ListViewOdFindItem(HWND hWndParent, LPNMLVFINDITEM lpfi)
-{
 }
 
 LRESULT ListViewCustomDraw(HWND hWndParent, LPNMLVCUSTOMDRAW lpcd)

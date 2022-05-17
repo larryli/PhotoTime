@@ -3,12 +3,12 @@
 
 <assemblyIdentity
     type="win32"
-    name="MyOrganization.MyDivision.MyApp"
+    name="cn.larryli.PhotoTime"
     version="1.0.0.0"
     processorArchitecture="amd64"
 />
 
-<description>Verbal description of MyApp.</description>
+<description>PhotoTime</description>
 
 <dependency>
   <dependentAssembly>

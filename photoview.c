@@ -7,7 +7,8 @@
 #include "main.h"
 #include "utils.h"
 
-#define HANDLE_PVM_SETPATH(hwnd,wParam,lParam,fn) ((fn)((hwnd),(LPCTSTR)(wParam)),0)
+#define HANDLE_PVM_SETPATH(hwnd,wParam,lParam,fn) ((fn)((hwnd),(PCTSTR)(wParam)))
+#define HANDLE_PVM_GETSIZE(hwnd,wParam,lParam,fn) ((fn)((hwnd),(PSIZE)(wParam)))
 
 static WNDPROC pPhotoViewProc = NULL;
 static LRESULT CALLBACK PhotoViewWndProc(HWND, UINT, WPARAM, LPARAM);
@@ -37,7 +38,7 @@ void DestroyPhotoViewWnd(HWND hWndPV)
         SetWindowLongPtr(hWndPV, GWLP_WNDPROC, (LONG_PTR)pPhotoViewProc);
 }
 
-static void PhotoView_OnSetPath(HWND hwnd, LPCTSTR szPath)
+static BOOL PhotoView_OnSetPath(HWND hwnd, PCTSTR szPath)
 {
     InvalidateRect(hwnd, NULL, TRUE);
     LONG_PTR p = GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -50,6 +51,17 @@ static void PhotoView_OnSetPath(HWND hwnd, LPCTSTR szPath)
     } else
         p = 0;
     SetWindowLongPtr(hwnd, GWLP_USERDATA, p);
+    return (p != -1); // NULL is TRUE
+}
+
+static BOOL PhotoView_OnGetSize(HWND hwnd, PSIZE pSize)
+{
+    LONG_PTR p = GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    if (p == -1)
+        return FALSE;
+    if (p && GdipGetSize((void *)p, pSize))
+        return TRUE;
+    return FALSE;
 }
 
 static BOOL PhotoView_OnEraseBkgnd(HWND hwnd, HDC hdc)
@@ -104,6 +116,7 @@ static LRESULT CALLBACK PhotoViewWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 {
     switch (msg) {
     HANDLE_MSG(hwnd, PVM_SETPATH, PhotoView_OnSetPath);
+    HANDLE_MSG(hwnd, PVM_GETSIZE, PhotoView_OnGetSize);
     HANDLE_MSG(hwnd, WM_ERASEBKGND, PhotoView_OnEraseBkgnd);
     HANDLE_MSG(hwnd, WM_PAINT, PhotoView_OnPaint);
     HANDLE_MSG(hwnd, WM_SIZE, PhotoView_OnSize);

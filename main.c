@@ -329,6 +329,63 @@ static void OpenDirectory(HWND hwnd)
     }
 }
 
+static void ShellOpen(HWND hwnd)
+{
+    int idx = ListView_GetSelectionMark(ghWndListView);
+    if (idx < 0 || idx >= gPhotoLib.iCount && gPhotoLib.pPhotos)
+        return;
+    PHOTO *pPhoto = gPhotoLib.pPhotos[idx];
+    if (!pPhoto)
+        return;
+    TCHAR szPath[MAX_PATH] = L"";
+    CatFilePath(szPath, NELEMS(szPath), gPhotoLib.szPath, pPhoto->szSubPath);
+    CatFilePath(szPath, NELEMS(szPath), szPath, pPhoto->szFilename);
+    ShellExecute(hwnd, NULL, szPath, NULL, NULL, SW_SHOW);
+}
+
+static void ShellFolder(HWND hwnd)
+{
+    int idx = ListView_GetSelectionMark(ghWndListView);
+    if (idx < 0 || idx >= gPhotoLib.iCount && gPhotoLib.pPhotos)
+        return;
+    PHOTO *pPhoto = gPhotoLib.pPhotos[idx];
+    if (!pPhoto)
+        return;
+    TCHAR szPath[MAX_PATH] = L"";
+    CatFilePath(szPath, NELEMS(szPath), gPhotoLib.szPath, pPhoto->szSubPath);
+    CatFilePath(szPath, NELEMS(szPath), szPath, pPhoto->szFilename);
+    PCIDLIST_ABSOLUTE pidlFolder = ILCreateFromPath(szPath);
+    if (!pidlFolder)
+        return;
+    SHOpenFolderAndSelectItems(pidlFolder, 0, NULL, 0);
+    ILFree((LPITEMIDLIST)pidlFolder);
+}
+
+static void ShellProperties(HWND hwnd)
+{
+    int idx = ListView_GetSelectionMark(ghWndListView);
+    if (idx < 0 || idx >= gPhotoLib.iCount && gPhotoLib.pPhotos)
+        return;
+    PHOTO *pPhoto = gPhotoLib.pPhotos[idx];
+    if (!pPhoto)
+        return;
+    TCHAR szPath[MAX_PATH] = L"";
+    CatFilePath(szPath, NELEMS(szPath), gPhotoLib.szPath, pPhoto->szSubPath);
+    CatFilePath(szPath, NELEMS(szPath), szPath, pPhoto->szFilename);
+    SHELLEXECUTEINFO shi = {
+        .cbSize = sizeof(SHELLEXECUTEINFO),
+        .fMask = SEE_MASK_INVOKEIDLIST,
+        .hwnd = hwnd,
+        .lpVerb = L"properties",
+        .lpFile = szPath,
+        .lpParameters = L"",
+        .lpDirectory  = NULL,
+        .nShow = SW_SHOW,
+        .hInstApp = NULL,
+    };
+    ShellExecuteEx(&shi);
+}
+
 static void Main_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 {
     switch (id) {
@@ -340,6 +397,15 @@ static void Main_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
         return;
     case IDM_EXIT:
         PostMessage(hwnd, WM_CLOSE, 0, 0L);
+        return;
+    case IDM_ITEM_OPEN:
+        ShellOpen(hwnd);
+        return;
+    case IDM_ITEM_FOLDER:
+        ShellFolder(hwnd);
+        return;
+    case IDM_ITEM_PROPERTIES:
+        ShellProperties(hwnd);
         return;
     }
 }
@@ -378,7 +444,7 @@ static void UpdateStatus(UINT uSel, UINT uDef)
     }
 }
 
-static int ShowPhoto(int idx)
+static BOOL ShowPhoto(int idx)
 {
     if (!gPhotoLib.pPhotos || idx >= gPhotoLib.iCount)
         return PhotoView_SetPath(ghWndPhotoView, NULL);
@@ -386,14 +452,21 @@ static int ShowPhoto(int idx)
     if (!pPhoto)
         return PhotoView_SetPath(ghWndPhotoView, NULL);
     TCHAR szPath[MAX_PATH] = L"";
-    if (pPhoto->szSubPath) {
-        CatFilePath(szPath, NELEMS(szPath), pPhoto->szSubPath, pPhoto->szFilename);
-        SetStatusBarText(ghWndStatusBar, 1, szPath);
-    } else
-        SetStatusBarText(ghWndStatusBar, 1, pPhoto->szFilename);
     CatFilePath(szPath, NELEMS(szPath), gPhotoLib.szPath, pPhoto->szSubPath);
     CatFilePath(szPath, NELEMS(szPath), szPath, pPhoto->szFilename);
-    return PhotoView_SetPath(ghWndPhotoView, szPath);
+    BOOL bRet = PhotoView_SetPath(ghWndPhotoView, szPath);
+    if (pPhoto->szSubPath)
+        CatFilePath(szPath, NELEMS(szPath), pPhoto->szSubPath, pPhoto->szFilename);
+    else
+        lstrcpyn(szPath, pPhoto->szFilename, NELEMS(szPath));
+    SIZE size;
+    if (bRet && PhotoView_GetSize(ghWndPhotoView, &size)) {
+        TCHAR szBuf[MAX_PATH] = L"";
+        swprintf(szBuf, NELEMS(szBuf), L"%ls  %d x %d", szPath, size.cx, size.cy);
+        SetStatusBarText(ghWndStatusBar, 1, szBuf);
+    } else
+        SetStatusBarText(ghWndStatusBar, 1, szPath);
+    return bRet;
 }
 
 static LRESULT Main_OnNotify(HWND hwnd, int wParam, NMHDR *lParam)
@@ -419,10 +492,6 @@ static LRESULT Main_OnNotify(HWND hwnd, int wParam, NMHDR *lParam)
         break;
     case NM_CUSTOMDRAW:
         return ListViewCustomDraw(hwnd, (LPNMLVCUSTOMDRAW)lParam);
-    case LVN_ODFINDITEM:
-        if (lParam->hwndFrom == ghWndListView)
-            ListViewOdFindItem(hwnd, (LPNMLVFINDITEM)lParam);
-        break;
     case TTN_NEEDTEXT:
         ToolBarNeedText(hwnd, (LPTOOLTIPTEXT)lParam);
         break;
