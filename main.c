@@ -27,7 +27,6 @@
 #define WM_SORT_DONE (WM_USER + 1)
 #define WM_FIND_DONE (WM_USER + 2)
 #define WM_REFRESH_DONE (WM_USER + 3)
-#define WM_AUTOPROC_DONE (WM_USER + 4)
 
 #define ID_TIMER_FIND 1
 #define ID_TIMER_REFRESH 2
@@ -49,6 +48,7 @@ static void Main_OnTimer(HWND, UINT);
 static void Main_OnSortStart(HWND, int, BOOL);
 static void Main_OnSortDone(HWND);
 static void Main_OnFindDone(HWND, BOOL);
+static void Main_OnRefreshDone(HWND);
 
 static void Lock(HWND);
 static void UnLock(HWND);
@@ -66,7 +66,7 @@ static int cxListView = 0;
 static int cxPhoto = 0;
 
 static int iRefreshStart = 0;
-static int iRefreshEnd = 0;
+static int iRefreshEnd = -1;
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pszCmdLine, int nCmdShow)
 {
@@ -165,10 +165,11 @@ static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
     case WM_SORT_START:
         return Main_OnSortStart(hwnd, (int)wParam, (BOOL)lParam), 0;
     case WM_SORT_DONE:
-    case WM_REFRESH_DONE:
         return Main_OnSortDone(hwnd), 0;
     case WM_FIND_DONE:
         return Main_OnFindDone(hwnd, (BOOL)wParam), 0;
+    case WM_REFRESH_DONE:
+        return Main_OnRefreshDone(hwnd), 0;
     default:
         return DefWindowProc(hwnd, msg, wParam, lParam);
     }
@@ -345,13 +346,14 @@ static void Refresh(HWND hwnd)
     Lock(hwnd);
     pParams->hWnd = hwnd;
     pParams->done = &iRefreshEnd;
-    iRefreshStart = iRefreshEnd = 0;
+    iRefreshStart = 0;
+    iRefreshEnd = -1;
     _beginthread(RefreshThread, 0, pParams);
     TCHAR szBuf[MAX_PATH];
     if (LoadString(ghInstance, IDS_REFRESH_START, szBuf, NELEMS(szBuf)))
         SetStatusBarText(ghWndStatusBar, 0, szBuf);
 #ifndef TIMER_REFRESH_ELAPSE
-#define TIMER_REFRESH_ELAPSE 500
+#define TIMER_REFRESH_ELAPSE 300
 #endif
     SetTimer(hwnd, ID_TIMER_REFRESH, TIMER_REFRESH_ELAPSE, NULL);
 }
@@ -513,7 +515,7 @@ static LRESULT Main_OnNotify(HWND hwnd, int wParam, NMHDR *lParam)
         if (lParam->hwndFrom == ghWndListView) {
             LPNM_LISTVIEW lpNmLv = (LPNM_LISTVIEW)lParam;
             if (lpNmLv->uChanged == LVIF_STATE) {
-                UpdateStatus(IDS_FIND_DONE_SEL, IDS_FIND_DONE);
+                UpdateStatus(IDS_DONE_SEL, IDS_DONE);
                 if (lpNmLv->uNewState & (LVIS_FOCUSED | LVIS_SELECTED))
                     ShowPhoto(lpNmLv->iItem);
             }
@@ -538,9 +540,9 @@ static void Main_OnTimer(HWND hwnd, UINT id)
     if (id == ID_TIMER_FIND) {
         ListView_SetItemCount(ghWndListView, gPhotoLib.iCount);
         UpdateStatus(IDS_FINDING_SEL, IDS_FINDING);
-    } else if (id == ID_TIMER_REFRESH && iRefreshEnd > iRefreshStart) { // ignore (0, 0)
+    } else if (id == ID_TIMER_REFRESH && iRefreshEnd >= iRefreshStart) {
         ListView_RedrawItems(ghWndListView, iRefreshStart, iRefreshEnd);
-        iRefreshStart = iRefreshEnd;
+        iRefreshStart = iRefreshEnd + 1; // (1, 0) do not redraw
     }
 }
 
@@ -569,7 +571,8 @@ static void Main_OnSortStart(HWND hwnd, int columnIndex, BOOL isAscending)
 {
     ASSERT_VOID(gPhotoLib.iCount > 0);
     ASSERT_VOID(gPhotoLib.pPhotos);
-    SORT_THREAD_PARAMS *pParams = (SORT_THREAD_PARAMS *)GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, sizeof(SORT_THREAD_PARAMS));
+    SORT_THREAD_PARAMS *pParams = (SORT_THREAD_PARAMS *)GlobalAlloc(
+        GMEM_FIXED | GMEM_ZEROINIT, sizeof(SORT_THREAD_PARAMS));
     ASSERT_VOID(pParams);
     Lock(hwnd);
     pParams->hWnd = hwnd;
@@ -584,7 +587,7 @@ static void Main_OnSortStart(HWND hwnd, int columnIndex, BOOL isAscending)
 static void Main_OnSortDone(HWND hwnd)
 {
     ListView_RedrawItems(ghWndListView, 0, gPhotoLib.iCount - 1);
-    UpdateStatus(IDS_FIND_DONE_SEL, IDS_FIND_DONE);
+    UpdateStatus(IDS_DONE_SEL, IDS_DONE);
     UnLock(hwnd);
 }
 
@@ -593,9 +596,19 @@ static void Main_OnFindDone(HWND hwnd, BOOL b)
     KillTimer(hwnd, ID_TIMER_FIND);
     ListView_SetItemCount(ghWndListView, gPhotoLib.iCount);
     if (b)
-        UpdateStatus(IDS_FIND_DONE_SEL, IDS_FIND_DONE);
+        UpdateStatus(IDS_DONE_SEL, IDS_DONE);
     else
         UpdateStatus(IDS_FIND_FAILED_SEL, IDS_FIND_FAILED);
+    UnLock(hwnd);
+}
+
+static void Main_OnRefreshDone(HWND hwnd)
+{
+    if (iRefreshEnd >= iRefreshStart)
+        ListView_RedrawItems(ghWndListView, iRefreshStart, iRefreshEnd);
+    iRefreshStart = 0;
+    iRefreshEnd = -1;
+    UpdateStatus(IDS_DONE_SEL, IDS_DONE);
     UnLock(hwnd);
 }
 
