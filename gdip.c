@@ -12,19 +12,16 @@
 #include "gdip.h"
 #include "utils.h"
 
-#define ASSERT_OK(a, ret) ASSERT(Ok == a, ret)
+#define ASSERT_OK_RETURN(a, s) ASSERT_RETURN(Ok == a, s)
 #define ASSERT_OK_VOID(a) ASSERT_VOID(Ok == a)
-#define ASSERT_OK_NULL(a) ASSERT_OK(a, NULL)
-#define ASSERT_OK_FALSE(a) ASSERT_OK(a, FALSE)
+#define ASSERT_OK_NULL(a) ASSERT_OK_RETURN(a, NULL)
+#define ASSERT_OK_FALSE(a) ASSERT_OK_RETURN(a, FALSE)
 #define ASSERT_OK_GOTO(a, label) ASSERT_GOTO(Ok == a, label)
 #define ASSERT_OK_END(a) ASSERT_OK_GOTO(a, end)
 
-#define ASSERT_S_OK(a, ret) ASSERT(S_OK == a, ret)
-#define ASSERT_S_OK_VOID(a) ASSERT_VOID(S_OK == a)
-#define ASSERT_S_OK_NULL(a) ASSERT_S_OK(a, NULL)
-#define ASSERT_S_OK_FALSE(a) ASSERT_S_OK(a, FALSE)
-#define ASSERT_S_OK_GOTO(a, label) ASSERT_GOTO(S_OK == a, label)
-#define ASSERT_S_OK_END(a) ASSERT_S_OK_GOTO(a, end)
+#define ASSERT_S_OK_RETURN(a, ret) ASSERT_RETURN(S_OK == a, ret)
+#define ASSERT_S_OK_NULL(a) ASSERT_S_OK_RETURN(a, NULL)
+#define ASSERT_S_OK_FALSE(a) ASSERT_S_OK_RETURN(a, FALSE)
 
 static ULONG_PTR upToken;
 
@@ -125,7 +122,7 @@ static RotateFlipType rfts[] = {
 static int GetImageRotaion(GpImage *image)
 {
     UINT size = 0;
-    ASSERT_OK(GdipGetPropertyItemSize(image, PropertyTagOrientation, &size), -1);
+    ASSERT_OK_RETURN(GdipGetPropertyItemSize(image, PropertyTagOrientation, &size), -1);
     PropertyItem *pPropItem = (PropertyItem *)GdipAlloc(size);
     ASSERT(pPropItem, -1);
     int iRet = -1;
