@@ -10,7 +10,7 @@
 #include "photo.h"
 #include "utils.h"
 
-#define WM_SORT_START (WM_USER + 2)
+#define WM_SORT_START (WM_USER)
 
 static void FormatSystemTime(LPTSTR, int, SYSTEMTIME *);
 static void ListView_SetHeaderSortImage(HWND, int, BOOL);
@@ -30,8 +30,7 @@ HWND CreateListViewWnd(HWND hWndParent, HINSTANCE hInst)
                                  (HMENU) ID_LISTVIEW,
                                  hInst,
                                  NULL);
-    if (!hWndLV)
-        return NULL;
+    ASSERT_NULL(hWndLV);
     ListView_SetExtendedListViewStyle(hWndLV, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_INFOTIP);
 
     int cxTime = 130;
@@ -57,8 +56,7 @@ HWND CreateListViewWnd(HWND hWndParent, HINSTANCE hInst)
     };
     iCount = (int)NELEMS(headers);
     for (int i = 0; i < iCount; i++) {
-        if (!LoadString(hInst, headers[i].uID, szBuf, NELEMS(szBuf)))
-            break;
+        ASSERT_BREAK(LoadString(hInst, headers[i].uID, szBuf, NELEMS(szBuf)));
         lvc.cx = headers[i].cx;
         ListView_InsertColumn(hWndLV, i, &lvc);
     }
@@ -90,15 +88,11 @@ void ListViewCleanSort(HWND hListView)
 
 void ListViewDispInfo(HWND hWndParent, LV_DISPINFO *lpdi)
 {
-    if (!(lpdi->item.mask & LVIF_TEXT))
-        return;
-    if (lpdi->item.iItem >= gPhotoLib.iCount)
-        return;
-    if (!(gPhotoLib.pPhotos))
-        return;
+    ASSERT_VOID(lpdi->item.mask & LVIF_TEXT);
+    ASSERT_VOID(lpdi->item.iItem >= 0 && lpdi->item.iItem < gPhotoLib.iCount);
+    ASSERT_VOID(gPhotoLib.pPhotos);
     PHOTO *pPhoto = gPhotoLib.pPhotos[lpdi->item.iItem];
-    if (!pPhoto)
-        return;
+    ASSERT_VOID(pPhoto);
     TCHAR szBuf[MAX_PATH] = L"";
     switch (lpdi->item.iSubItem) {
     case 0:
@@ -112,18 +106,15 @@ void ListViewDispInfo(HWND hWndParent, LV_DISPINFO *lpdi)
         swprintf(szBuf, MAX_PATH, L"%lld", pPhoto->filesize.QuadPart);
         break;
     case 3:
-        if (!(pPhoto->pStFileTime))
-            return;
+        ASSERT_VOID(pPhoto->pStFileTime);
         FormatSystemTime(szBuf, MAX_PATH, pPhoto->pStFileTime);
         break;
     case 4:
-        if (!(pPhoto->pStExifTime))
-            return;
+        ASSERT_VOID(pPhoto->pStExifTime);
         FormatSystemTime(szBuf, MAX_PATH, pPhoto->pStExifTime);
         break;
     case 5:
-        if (!(pPhoto->pStFilenameTime))
-            return;
+        ASSERT_VOID(pPhoto->pStFilenameTime);
         FormatSystemTime(szBuf, MAX_PATH, pPhoto->pStFilenameTime);
         break;
     }

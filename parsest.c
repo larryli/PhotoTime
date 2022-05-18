@@ -20,8 +20,7 @@ typedef enum {
 static BOOL ToWord(LPCTSTR szStr, int len, STATE state, PWORD pW)
 {
     TCHAR szBuf[5];
-    if (len <= 0 || len > 4)
-        return FALSE;
+    ASSERT_FALSE(len > 0 && len <= 4);
     lstrcpyn(szBuf, szStr, len + 1);
     WORD w = (WORD)_wtoi(szBuf);
     switch (state) {
@@ -64,10 +63,10 @@ static BOOL ToSystemTime(LPCTSTR szStr, PSYSTEMTIME pSt)
 
 static BOOL IsValidDate(PSYSTEMTIME pSt)
 {
-  WORD daysInMonth[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-  if ((!(pSt->wYear % 4) && pSt->wYear % 100) || !(pSt->wYear % 400))
-    daysInMonth[1] = 29;
-  return pSt->wDay <= daysInMonth[pSt->wMonth - 1];
+    WORD daysInMonth[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if ((!(pSt->wYear % 4) && pSt->wYear % 100) || !(pSt->wYear % 400))
+        daysInMonth[1] = 29;
+    return pSt->wDay <= daysInMonth[pSt->wMonth - 1];
 }
 
 BOOL ParseStringToSystemTime(LPCTSTR szStr, PSYSTEMTIME pSt, PARSEST_RESULT *result)
@@ -78,8 +77,7 @@ BOOL ParseStringToSystemTime(LPCTSTR szStr, PSYSTEMTIME pSt, PARSEST_RESULT *res
     for (; *s; s++)
         if (iswdigit(*s))
             break;
-    if (!(*s))
-        return FALSE;
+    ASSERT_FALSE(*s);
     STATE state = STATE_YEAR;
     int len = 0;
     TCHAR cLast = L'\0';
@@ -92,18 +90,16 @@ BOOL ParseStringToSystemTime(LPCTSTR szStr, PSYSTEMTIME pSt, PARSEST_RESULT *res
         switch (state) {
         case STATE_YEAR:
             if (len == 4 && is_sep(*s)) { // 1992
-                if (!ToWord(szS, len, STATE_YEAR, &pSt->wYear))
-                    return FALSE;
+                ASSERT_FALSE(ToWord(szS, len, STATE_YEAR, &pSt->wYear));
                 cLast = *s;
                 state = STATE_MON;
                 szS = s + 1;
                 len = 0;
             } else if (len == 8) { // 19920304
-                if (!ToWord(szS, 4, STATE_YEAR, &pSt->wYear) ||
-                    !ToWord(szS + 4, 2, STATE_MON, &pSt->wMonth) ||
-                    !ToWord(szS + 6, 2, STATE_DAY, &pSt->wDay) || 
-                    !IsValidDate(pSt))
-                    return FALSE;
+                ASSERT_FALSE(ToWord(szS, 4, STATE_YEAR, &pSt->wYear));
+                ASSERT_FALSE(ToWord(szS + 4, 2, STATE_MON, &pSt->wMonth));
+                ASSERT_FALSE(ToWord(szS + 6, 2, STATE_DAY, &pSt->wDay));
+                ASSERT_FALSE(IsValidDate(pSt));
                 if (!is_sep(*s)) {
                     *result = PARSEST_NO_TIME;
                     return TRUE;
@@ -112,46 +108,44 @@ BOOL ParseStringToSystemTime(LPCTSTR szStr, PSYSTEMTIME pSt, PARSEST_RESULT *res
                 szS = s + 1;
                 len = 0;
             } else if (len == 10 || len == 13) { // 1000000000(000) --> 20010909094640
-                if (!ToSystemTime(szS, pSt))
-                    return FALSE;
+                ASSERT_FALSE(ToSystemTime(szS, pSt));
                 *result = PARSEST_OK;
                 return TRUE;
             } else if (len == 12) { // 19920304050607
-                if (!ToWord(szS, 4, STATE_YEAR, &pSt->wYear) ||
-                    !ToWord(szS + 4, 2, STATE_MON, &pSt->wMonth) ||
-                    !ToWord(szS + 6, 2, STATE_DAY, &pSt->wDay) ||
-                    !IsValidDate(pSt) ||
-                    !ToWord(szS + 8, 2, STATE_HOUR, &pSt->wHour) ||
-                    !ToWord(szS + 10, 2, STATE_MIN, &pSt->wMinute))
-                    return FALSE;
+                ASSERT_FALSE(ToWord(szS, 4, STATE_YEAR, &pSt->wYear));
+                ASSERT_FALSE(ToWord(szS + 4, 2, STATE_MON, &pSt->wMonth));
+                ASSERT_FALSE(ToWord(szS + 6, 2, STATE_DAY, &pSt->wDay));
+                ASSERT_FALSE(IsValidDate(pSt));
+                ASSERT_FALSE(ToWord(szS + 8, 2, STATE_HOUR, &pSt->wHour));
+                ASSERT_FALSE(ToWord(szS + 10, 2, STATE_MIN, &pSt->wMinute));
                 *result = PARSEST_NO_SECOND;
                 return TRUE;
             } else if (len == 14) { // 19920304050607
-                if (!ToWord(szS, 4, STATE_YEAR, &pSt->wYear) ||
-                    !ToWord(szS + 4, 2, STATE_MON, &pSt->wMonth) ||
-                    !ToWord(szS + 6, 2, STATE_DAY, &pSt->wDay) ||
-                    !IsValidDate(pSt) ||
-                    !ToWord(szS + 8, 2, STATE_HOUR, &pSt->wHour) ||
-                    !ToWord(szS + 10, 2, STATE_MIN, &pSt->wMinute) ||
-                    !ToWord(szS + 12, 2, STATE_SEC, &pSt->wSecond))
-                    return FALSE;
+                ASSERT_FALSE(ToWord(szS, 4, STATE_YEAR, &pSt->wYear));
+                ASSERT_FALSE(ToWord(szS + 4, 2, STATE_MON, &pSt->wMonth));
+                ASSERT_FALSE(ToWord(szS + 6, 2, STATE_DAY, &pSt->wDay));
+                ASSERT_FALSE(IsValidDate(pSt));
+                ASSERT_FALSE(ToWord(szS + 8, 2, STATE_HOUR, &pSt->wHour));
+                ASSERT_FALSE(ToWord(szS + 10, 2, STATE_MIN, &pSt->wMinute));
+                ASSERT_FALSE(ToWord(szS + 12, 2, STATE_SEC, &pSt->wSecond));
                 *result = PARSEST_OK;
                 return TRUE;
             } else
                 return FALSE;
             break;
         case STATE_MON:
-            if (!is_sep(*s) || *s != cLast || len > 2 ||
-                !ToWord(szS, len, STATE_MON, &pSt->wMonth))
-                return FALSE;
+            ASSERT_FALSE(is_sep(*s));
+            ASSERT_FALSE(*s == cLast);
+            ASSERT_FALSE(len <= 2);
+            ASSERT_FALSE(ToWord(szS, len, STATE_MON, &pSt->wMonth));
             state = STATE_DAY;
             szS = s + 1;
             len = 0;
             break;
         case STATE_DAY:
-            if (len > 2 || !ToWord(szS, len, STATE_DAY, &pSt->wDay) ||
-                !IsValidDate(pSt))
-                return FALSE;
+            ASSERT_FALSE(len <= 2);
+            ASSERT_FALSE(ToWord(szS, len, STATE_DAY, &pSt->wDay));
+            ASSERT_FALSE(IsValidDate(pSt));
             if (!is_sep(*s)) {
                 *result = PARSEST_NO_TIME;
                 return TRUE;

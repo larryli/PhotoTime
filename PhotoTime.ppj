@@ -110,7 +110,8 @@ output\statusbar.obj: \
 output\toolbar.obj: \
 	toolbar.c \
 	main.h \
-	toolbar.h
+	toolbar.h \
+	utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 

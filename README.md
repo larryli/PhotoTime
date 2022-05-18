@@ -1,6 +1,8 @@
-# PhotoTime 照片时间修改器
+# 🖼 ️PhotoTime 照片时间修改器
 
 [JpgTime](http://www.muralpix.com/jpgtime/) 功能增强，仅支持 Windows 7 x64 以上版本。
+
+开发工具：[Pelles C 11.00](http://www.smorgasbordet.com/pellesc/)
 
 ## 功能
 
@@ -21,5 +23,4 @@
 
 ## TODO
 
-- [ ] 重新载入当前照片列表，刷新信息
 - [ ] 自动处理照片时间

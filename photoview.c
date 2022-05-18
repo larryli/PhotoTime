@@ -24,8 +24,7 @@ HWND CreatePhotoViewWnd(HWND hWndParent, HINSTANCE hInst)
                                0,
                                hInst,
                                NULL);
-    if (!hWndPV)
-        return NULL;
+    ASSERT_NULL(hWndPV);
     WNDPROC p = (WNDPROC)SetWindowLongPtr(hWndPV, GWLP_WNDPROC, (LONG_PTR)PhotoViewWndProc);
     if (!pPhotoViewProc)
         pPhotoViewProc = p;
@@ -34,8 +33,8 @@ HWND CreatePhotoViewWnd(HWND hWndParent, HINSTANCE hInst)
 
 void DestroyPhotoViewWnd(HWND hWndPV)
 {
-    if (pPhotoViewProc)
-        SetWindowLongPtr(hWndPV, GWLP_WNDPROC, (LONG_PTR)pPhotoViewProc);
+    ASSERT_VOID(pPhotoViewProc);
+    SetWindowLongPtr(hWndPV, GWLP_WNDPROC, (LONG_PTR)pPhotoViewProc);
 }
 
 static BOOL PhotoView_OnSetPath(HWND hwnd, PCTSTR szPath)
@@ -59,9 +58,8 @@ static BOOL PhotoView_OnGetSize(HWND hwnd, PSIZE pSize)
     LONG_PTR p = GetWindowLongPtr(hwnd, GWLP_USERDATA);
     if (p == -1)
         return FALSE;
-    if (p && GdipGetSize((void *)p, pSize))
-        return TRUE;
-    return FALSE;
+    ASSERT_FALSE(p);
+    return GdipGetSize((void *)p, pSize);
 }
 
 static BOOL PhotoView_OnEraseBkgnd(HWND hwnd, HDC hdc)
@@ -75,12 +73,11 @@ static BOOL PhotoView_OnEraseBkgnd(HWND hwnd, HDC hdc)
 static void DrawIdString(HWND hwnd, HDC hdc, RECT *rc, int id)
 {
     TCHAR szBuf[MAX_PATH];
-    if (LoadString((HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), id, szBuf, NELEMS(szBuf))) {
-        SelectObject(hdc, GetStockObject(OEM_FIXED_FONT));
-        SetTextColor(hdc, GetSysColor(COLOR_GRAYTEXT));
-        SetBkColor(hdc, GetSysColor(COLOR_BTNFACE));
-        DrawText(hdc, szBuf, -1, rc, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
-    }
+    ASSERT_VOID(LoadString((HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), id, szBuf, NELEMS(szBuf)));
+    SelectObject(hdc, GetStockObject(OEM_FIXED_FONT));
+    SetTextColor(hdc, GetSysColor(COLOR_GRAYTEXT));
+    SetBkColor(hdc, GetSysColor(COLOR_BTNFACE));
+    DrawText(hdc, szBuf, -1, rc, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
 }
 
 static void PhotoView_OnPaint(HWND hwnd)

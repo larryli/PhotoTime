@@ -28,15 +28,13 @@ void GetFileExt(LPTSTR szExt, int size, LPCTSTR szPath)
 BOOL FileTimeToLocalSystemTime(CONST FILETIME *pFt, PSYSTEMTIME pSt)
 {
     FILETIME local;
-    if (FileTimeToLocalFileTime(pFt, &local))
-        return FileTimeToSystemTime(&local, pSt);
-    return FALSE;
+    ASSERT_FALSE(FileTimeToLocalFileTime(pFt, &local));
+    return FileTimeToSystemTime(&local, pSt);
 }
 
 BOOL LocalSystemTimeToFileTime(CONST SYSTEMTIME *pSt, PFILETIME pFt)
 {
     FILETIME local;
-    if (SystemTimeToFileTime(pSt, &local))
-        return LocalFileTimeToFileTime(&local, pFt);
-    return FALSE;
+    ASSERT_FALSE(SystemTimeToFileTime(pSt, &local));
+    return LocalFileTimeToFileTime(&local, pFt);
 }

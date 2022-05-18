@@ -12,6 +12,20 @@
 #include "gdip.h"
 #include "utils.h"
 
+#define ASSERT_OK(a, ret) ASSERT(Ok == a, ret)
+#define ASSERT_OK_VOID(a) ASSERT_VOID(Ok == a)
+#define ASSERT_OK_NULL(a) ASSERT_OK(a, NULL)
+#define ASSERT_OK_FALSE(a) ASSERT_OK(a, FALSE)
+#define ASSERT_OK_GOTO(a, label) ASSERT_GOTO(Ok == a, label)
+#define ASSERT_OK_END(a) ASSERT_OK_GOTO(a, end)
+
+#define ASSERT_S_OK(a, ret) ASSERT(S_OK == a, ret)
+#define ASSERT_S_OK_VOID(a) ASSERT_VOID(S_OK == a)
+#define ASSERT_S_OK_NULL(a) ASSERT_S_OK(a, NULL)
+#define ASSERT_S_OK_FALSE(a) ASSERT_S_OK(a, FALSE)
+#define ASSERT_S_OK_GOTO(a, label) ASSERT_GOTO(S_OK == a, label)
+#define ASSERT_S_OK_END(a) ASSERT_S_OK_GOTO(a, end)
+
 static ULONG_PTR upToken;
 
 typedef struct {
@@ -28,16 +42,12 @@ static void InitGuidToClsid(void)
         return;
     UINT size = 0;
     ImageCodecInfo *pImageCodecInfo = NULL;
-    if (Ok != GdipGetImageEncodersSize(&uGuidToClsid, &size))
-        return;
+    ASSERT_OK_VOID(GdipGetImageEncodersSize(&uGuidToClsid, &size));
     pImageCodecInfo = GdipAlloc(size);
-    if (pImageCodecInfo == NULL)
-        return;
-    if (Ok != GdipGetImageEncoders(uGuidToClsid, size, pImageCodecInfo))
-        goto end;
+    ASSERT_VOID(pImageCodecInfo);
+    ASSERT_OK_END(GdipGetImageEncoders(uGuidToClsid, size, pImageCodecInfo));
     pGuidToClsid = GdipAlloc(uGuidToClsid * sizeof(GUID_TO_CLSID));
-    if (pGuidToClsid == NULL)
-        goto end;
+    ASSERT_GOTO(pGuidToClsid, end);
     for (UINT i = 0; i < uGuidToClsid; ++i) {
         pGuidToClsid[i].guid = pImageCodecInfo[i].FormatID;
         pGuidToClsid[i].clsid = pImageCodecInfo[i].Clsid;
@@ -73,8 +83,7 @@ void DeinitGdip(void)
 static CLSID *GetImageEncoderClsid(GpImage *image)
 {
     GUID guid;
-    if (Ok != GdipGetImageRawFormat(image, &guid))
-        return NULL;
+    ASSERT_OK_NULL(GdipGetImageRawFormat(image, &guid));
     for (UINT i = 0; i < uGuidToClsid; i++)
         if (IsEqualGUID(&guid, &pGuidToClsid[i].guid))
             return &pGuidToClsid[i].clsid;
@@ -84,8 +93,7 @@ static CLSID *GetImageEncoderClsid(GpImage *image)
 static GpImage *GdipLoadImageFile(LPCTSTR szFilePath)
 {
     IStream *stream;
-    if (S_OK != SHCreateStreamOnFile(szFilePath, STGM_READ, &stream))
-        return NULL;
+    ASSERT_S_OK_NULL(SHCreateStreamOnFile(szFilePath, STGM_READ, &stream));
     GpImage *image;
     if (Ok != GdipLoadImageFromStream(stream, &image))
         image = NULL;
@@ -95,15 +103,11 @@ static GpImage *GdipLoadImageFile(LPCTSTR szFilePath)
 
 static BOOL GdipSaveImageFile(GpImage *image, LPCTSTR szFilePath)
 {
-    BOOL bRet = FALSE;
     CLSID *clsid = GetImageEncoderClsid(image);
-    if (!clsid)
-        return bRet;
+    ASSERT_FALSE(clsid);
     IStream *stream;
-    if (S_OK != SHCreateStreamOnFile(szFilePath, STGM_WRITE, &stream))
-        return bRet;
-    if (Ok == GdipSaveImageToStream(image, stream, clsid, NULL))
-        bRet = TRUE;
+    ASSERT_S_OK_FALSE(SHCreateStreamOnFile(szFilePath, STGM_WRITE, &stream));
+    BOOL bRet = (Ok == GdipSaveImageToStream(image, stream, clsid, NULL));
     IStream_Release(stream);
     return bRet;
 }
@@ -120,17 +124,13 @@ static RotateFlipType rfts[] = {
 
 static int GetImageRotaion(GpImage *image)
 {
-    int iRet = -1;
     UINT size = 0;
-    if (Ok != GdipGetPropertyItemSize(image, PropertyTagOrientation, &size))
-        return iRet;
+    ASSERT_OK(GdipGetPropertyItemSize(image, PropertyTagOrientation, &size), -1);
     PropertyItem *pPropItem = (PropertyItem *)GdipAlloc(size);
-    if (!pPropItem)
-        return iRet;
-    if (Ok != GdipGetPropertyItem(image, PropertyTagOrientation, size, pPropItem))
-        goto end;
-    if (pPropItem->type != PropertyTagTypeShort)
-        goto end;
+    ASSERT(pPropItem, -1);
+    int iRet = -1;
+    ASSERT_OK_END(GdipGetPropertyItem(image, PropertyTagOrientation, size, pPropItem));
+    ASSERT_END(pPropItem->type == PropertyTagTypeShort);
     iRet = (int)(*((SHORT *)pPropItem->value) - PropertyTagRotateNoneFlipX);
 end:
     GdipFree(pPropItem);
@@ -140,8 +140,7 @@ end:
 void *GdipLoadImage(LPCTSTR szFilePath)
 {
     GpImage *image = GdipLoadImageFile(szFilePath);
-    if (!image)
-        return NULL;
+    ASSERT_NULL(image);
     int iRotaion = GetImageRotaion(image);
     if (iRotaion >= 0 && iRotaion < (SHORT)NELEMS(rfts))
         GdipImageRotateFlip(image, rfts[iRotaion]);
@@ -150,22 +149,17 @@ void *GdipLoadImage(LPCTSTR szFilePath)
 
 BOOL GdipGetTagSystemTime(LPCTSTR szFilePath, PSYSTEMTIME pSt)
 {
-    BOOL bRet = FALSE;
-    PropertyItem *pPropItem = NULL;
     GpImage *image = GdipLoadImageFile(szFilePath);
-    if (!image)
-        return bRet;
+    ASSERT_FALSE(image);
 
+    PropertyItem *pPropItem = NULL;
+    BOOL bRet = FALSE;
     UINT size = 0;
-    if (Ok != GdipGetPropertyItemSize(image, PropertyTagDateTime, &size))
-        goto end;
+    ASSERT_OK_END(GdipGetPropertyItemSize(image, PropertyTagDateTime, &size));
     pPropItem = (PropertyItem *)GdipAlloc(size);
-    if (!pPropItem)
-        goto end;
-    if (Ok != GdipGetPropertyItem(image, PropertyTagDateTime, size, pPropItem))
-        goto end;
-    if (pPropItem->type != PropertyTagTypeASCII)
-        goto end;
+    ASSERT_END(pPropItem);
+    ASSERT_OK_END(GdipGetPropertyItem(image, PropertyTagDateTime, size, pPropItem));
+    ASSERT_END(pPropItem->type == PropertyTagTypeASCII);
     ZeroMemory(pSt, sizeof(SYSTEMTIME));
     sscanf((char *)pPropItem->value, "%hu:%hu:%hu %hu:%hu:%hu",
            &pSt->wYear, &pSt->wMonth, &pSt->wDay, &pSt->wHour, &pSt->wMinute, &pSt->wSecond);
@@ -181,24 +175,20 @@ end:
 void GdipDestoryImage(void *data)
 {
     GpImage *image = (GpImage *)data;
-    if (image)
-        GdipDisposeImage(image);
+    ASSERT_VOID(image);
+    GdipDisposeImage(image);
 }
 
 BOOL GdipDrawImage(void *data, HDC hdc, const RECT * rc)
 {
-    BOOL bRet = FALSE;
     GpImage *image = (GpImage *)data;
-    if (!image)
-        return bRet;
+    ASSERT_FALSE(image);
     GpGraphics *graphics = NULL;
-    if (Ok != GdipCreateFromHDC(hdc, &graphics))
-        return bRet;
+    ASSERT_OK_FALSE(GdipCreateFromHDC(hdc, &graphics));
+    BOOL bRet = FALSE;
     UINT w, h;
-    if (Ok != GdipGetImageWidth(image, &w))
-        goto end;
-    if (Ok != GdipGetImageHeight(image, &h))
-        goto end;
+    ASSERT_OK_END(GdipGetImageWidth(image, &w));
+    ASSERT_OK_END(GdipGetImageHeight(image, &h));
     UINT x = rc->left;
     UINT y = rc->top;
     UINT cw = (UINT)(rc->right - rc->left);
@@ -230,8 +220,7 @@ BOOL GdipDrawImage(void *data, HDC hdc, const RECT * rc)
         x += (LONG)((cw - w) / 2);
         y += (LONG)((ch - h) / 2);
     }
-    if (Ok == GdipDrawImageRectI(graphics, image, x, y, w, h))
-        bRet = TRUE;
+    bRet = (Ok == GdipDrawImageRectI(graphics, image, x, y, w, h));
 end:
     if (graphics)
         GdipDeleteGraphics(graphics);
@@ -242,8 +231,7 @@ BOOL GdipSaveImageWithTagSystemTime(LPCTSTR szFilePath, const PSYSTEMTIME pSt)
 {
     BOOL bRet = FALSE;
     GpImage *image = GdipLoadImageFile(szFilePath);
-    if (!image)
-        return bRet;
+    ASSERT_FALSE(image);
     char buf[20] = "\0"; // "YYYY:MM:DD hh:mm:ss"
     ULONG len = (ULONG)snprintf(buf, NELEMS(buf), "%4hu:%02hu:%02hu %02hu:%02hu:%02hu",
                                 pSt->wYear, pSt->wMonth, pSt->wDay, pSt->wHour, pSt->wMinute, pSt->wSecond);
@@ -253,8 +241,7 @@ BOOL GdipSaveImageWithTagSystemTime(LPCTSTR szFilePath, const PSYSTEMTIME pSt)
         .type = PropertyTagTypeASCII,
         .value = buf,
     };
-    if (Ok != GdipSetPropertyItem(image, &propItem))
-        goto end;
+    ASSERT_OK_END(GdipSetPropertyItem(image, &propItem));
     bRet = GdipSaveImageFile(image, szFilePath);
 end:
     GdipDisposeImage(image);
@@ -264,11 +251,8 @@ end:
 BOOL GdipGetSize(void *data, SIZE *size)
 {
     GpImage *image = (GpImage *)data;
-    if (!image)
-        return FALSE;
-    if (Ok != GdipGetImageWidth(image, &size->cx))
-        return FALSE;
-    if (Ok != GdipGetImageHeight(image, &size->cy))
-        return FALSE;
+    ASSERT_FALSE(image);
+    ASSERT_OK_FALSE(GdipGetImageWidth(image, &size->cx));
+    ASSERT_OK_FALSE(GdipGetImageHeight(image, &size->cy));
     return TRUE;
 }

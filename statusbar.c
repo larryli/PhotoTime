@@ -32,8 +32,7 @@ HWND CreateStatusBarWnd(HWND hWndParent, HINSTANCE hInst, TCHAR *szText, TCHAR *
                                             szText,
                                             hWndParent,
                                             ID_STATUSBAR);
-    if (!hWndStatusBar)
-        return 0;
+    ASSERT_NULL(hWndStatusBar);
     TCHAR szBuf[MAX_PATH];
     swprintf(szBuf, NELEMS(szBuf), L"<a href=\"%ls\">%ls</a>", szUrl, szUrl);
     HWND hWndSysLink = CreateWindowEx(0, WC_LINK, szBuf, WS_VISIBLE | WS_CHILD,

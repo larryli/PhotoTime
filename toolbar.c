@@ -3,10 +3,8 @@
 #include <commctrl.h>
 
 #include "toolbar.h"
-
+#include "utils.h"
 #include "main.h"
-
-#define NELEMS(a) (sizeof(a) / sizeof((a)[0]))
 
 HWND CreateToolBarWnd(HWND hWndParent, HINSTANCE hInst)
 {
@@ -19,8 +17,7 @@ HWND CreateToolBarWnd(HWND hWndParent, HINSTANCE hInst)
                                  (HMENU) ID_TOOLBAR,
                                  hInst,
                                  NULL);
-    if (!hWndTB)
-        return NULL;
+    ASSERT_NULL(hWndTB);
     SendMessage(hWndTB, TB_BUTTONSTRUCTSIZE, (WPARAM) sizeof(TBBUTTON), 0);
     TBADDBITMAP tbab = {
         .hInst = 0,

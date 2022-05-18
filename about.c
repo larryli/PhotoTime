@@ -20,13 +20,10 @@ static void InitDialog(HWND hwnd)
     DWORD dwInfo;
     UINT size = GetFileVersionInfoSize(szPath, &dwInfo);
     void *pInfo = GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, size);
-    if (!pInfo)
-        return;
-    if (!GetFileVersionInfo(szPath, dwInfo, size, pInfo))
-        goto end;
+    ASSERT_VOID(pInfo);
+    ASSERT_END(GetFileVersionInfo(szPath, dwInfo, size, pInfo));
     void far *ptr;
-    if (!VerQueryValue(pInfo, L"\\VarFileInfo\\Translation", &ptr, &size))
-        goto end;
+    ASSERT_END(VerQueryValue(pInfo, L"\\VarFileInfo\\Translation", &ptr, &size));
     WORD far *pLang = (WORD far *)ptr;
     TCHAR szBuf[MAX_PATH];
     swprintf(szBuf, NELEMS(szBuf), L"\\StringFileInfo\\%04X%04X\\%ls", *pLang, *(pLang + 1), L"ProductName");

@@ -19,5 +19,6 @@ typedef struct {
 
 extern PHOTOLIB gPhotoLib;
 
-BOOL FindPhoto(LPCTSTR szPath);
+BOOL FindPhotos(LPCTSTR szPath);
 void SortPhotos(int idx, BOOL isAscending);
+void RefreshPhotos(int *done);
