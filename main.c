@@ -488,7 +488,9 @@ static void ExportTsv(HWND hwnd)
     TCHAR szBuf[MAX_PATH] = L"";
     ASSERT_VOID(GetSavePath(hwnd, IDS_TSV_FILE, szBuf, NELEMS(szBuf), L".tsv"));
     Lock(hwnd);
+    UpdateStatus(IDS_EXPORT_START);
     BOOL bRet = ExportToTsv(ghWndListView, szBuf);
+    UpdateStatusDone();
     UnLock(hwnd);
     if (bRet)
         return;
@@ -502,7 +504,9 @@ static void ExportHtml(HWND hwnd)
     GetWindowText(hwnd, szTitle, NELEMS(szTitle));
     ASSERT_VOID(GetSavePath(hwnd, IDS_HTML_FILE, szBuf, NELEMS(szBuf), L".html"));
     Lock(hwnd);
+    UpdateStatus(IDS_EXPORT_START);
     BOOL bRet = ExportToHtml(ghWndListView, szBuf, szTitle);
+    UpdateStatusDone();
     UnLock(hwnd);
     if (bRet)
         return;

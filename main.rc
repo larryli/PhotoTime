@@ -125,5 +125,6 @@ STRINGTABLE
   IDS_TSV_FILE, "TSV 文件 (*.tsv)\0*.tsv\0"
   IDS_HTML_FILE, "HTML 文件 (*.html; *.htm)\0*.html; *.htm\0"
   IDS_SAVE_FILE_FAILED, "无法保存文件！"
+  IDS_EXPORT_START, "正在导出数据..."
 }
 
