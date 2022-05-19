@@ -22,25 +22,24 @@ PHOTOLIB gPhotoLib = {
 };
 
 static void FreePhotos(void);
-static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub);
+static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, PCTSTR szPath, PCTSTR szSub);
 static void FreePhoto(PHOTO *pPhoto);
-static BOOL FindFile(HANDLE *phFind, WIN32_FIND_DATA *pWfd, LPCTSTR szPath);
+static BOOL FindFile(HANDLE *phFind, WIN32_FIND_DATA *pWfd, PCTSTR szPath);
 
-static BOOL IsPhotoFile(LPCTSTR szPath)
+static BOOL IsPhotoFile(PCTSTR szPath)
 {
-    static LPCTSTR szExts[] = {
+    static PCTSTR szExts[] = {
         L"jpg",
         L"jpeg",
     };
-    TCHAR szExt[MAX_PATH];
-    GetFileExt(szExt, NELEMS(szExt), szPath);
+    PCTSTR szExt = GetFileExt(szPath);
     for (int i = 0; i < (int)NELEMS(szExts); i++)
         if (_wcsicmp(szExt, szExts[i]) == 0)
             return TRUE;
     return FALSE;
 }
 
-static BOOL IsIgnoreDirectory(LPCTSTR szPath)
+static BOOL IsIgnoreDirectory(PCTSTR szPath)
 {
     static LPCTSTR szIgnores[] = {
         L".@__thumb",
@@ -52,7 +51,7 @@ static BOOL IsIgnoreDirectory(LPCTSTR szPath)
     return FALSE;
 }
 
-static BOOL FindPhotoWithSub(LPCTSTR szPath, LPCTSTR szSub)
+static BOOL FindPhotoWithSub(PCTSTR szPath, PCTSTR szSub)
 {
     HANDLE hFind = NULL;
     WIN32_FIND_DATA wfd;
@@ -96,7 +95,7 @@ static BOOL FindPhotoWithSub(LPCTSTR szPath, LPCTSTR szSub)
     return TRUE;
 }
 
-BOOL FindPhotos(LPCTSTR szPath)
+BOOL FindPhotos(PCTSTR szPath)
 {
     FreePhotos();
     int size = lstrlen(szPath) + 1;

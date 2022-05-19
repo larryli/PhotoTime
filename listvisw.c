@@ -15,7 +15,6 @@
 static void FormatSystemTime(LPTSTR, int, SYSTEMTIME *);
 static void ListView_SetHeaderSortImage(HWND, int, BOOL);
 
-static int iCount = 0;
 static int lastnColumnIndex = -1;
 static BOOL bAscendingOrder = FALSE;
 
@@ -40,7 +39,7 @@ HWND CreateListViewWnd(HWND hWndParent, HINSTANCE hInst)
     struct {
         UINT uID;
         int cx;
-    } headers[] = {
+    } headers[LV_ROWS] = {
         {.uID = IDS_FILENAME, .cx = 180},
         {.uID = IDS_SUBDIRECTORY, .cx = 120},
         {.uID = IDS_SIZE, .cx = 80},
@@ -54,8 +53,7 @@ HWND CreateListViewWnd(HWND hWndParent, HINSTANCE hInst)
         .fmt = LVCFMT_LEFT,
         .pszText = szBuf,
     };
-    iCount = (int)NELEMS(headers);
-    for (int i = 0; i < iCount; i++) {
+    for (int i = 0; i < LV_ROWS; i++) {
         ASSERT_BREAK(LoadString(hInst, headers[i].uID, szBuf, NELEMS(szBuf)));
         lvc.cx = headers[i].cx;
         ListView_InsertColumn(hWndLV, i, &lvc);
@@ -66,7 +64,7 @@ HWND CreateListViewWnd(HWND hWndParent, HINSTANCE hInst)
 int ListViewGetColumnWidth(HWND hWndLV)
 {
     int w = 24; // vscroll width
-    for (int i = 0; i < iCount; i++)
+    for (int i = 0; i < LV_ROWS; i++)
         w += ListView_GetColumnWidth(hWndLV, i);
     return w;
 }

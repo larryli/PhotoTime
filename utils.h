@@ -19,7 +19,7 @@
 #define ASSERT_FAILED(a) ASSERT_GOTO(a, failed)
 #endif
 
-void CatFilePath(LPTSTR szBuf, int size, LPCTSTR szParent, LPCTSTR szPath);
-void GetFileExt(LPTSTR szExt, int size, LPCTSTR szPath);
+void CatFilePath(PTSTR szBuf, int size, PCTSTR szParent, PCTSTR szPath);
+PCTSTR GetFileExt(PCTSTR szPath);
 BOOL FileTimeToLocalSystemTime(CONST FILETIME *pFt, PSYSTEMTIME pSt);
 BOOL LocalSystemTimeToFileTime(CONST SYSTEMTIME *pSt, PFILETIME pFt);

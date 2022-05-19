@@ -4,7 +4,7 @@
 
 #include "utils.h"
 
-void CatFilePath(LPTSTR szBuf, int size, LPCTSTR szParent, LPCTSTR szPath)
+void CatFilePath(PTSTR szBuf, int size, PCTSTR szParent, PCTSTR szPath)
 {
     if (!szBuf || size <= 0)
         return;
@@ -16,13 +16,13 @@ void CatFilePath(LPTSTR szBuf, int size, LPCTSTR szParent, LPCTSTR szPath)
     }
 }
 
-void GetFileExt(LPTSTR szExt, int size, LPCTSTR szPath)
+PCTSTR GetFileExt(PCTSTR szPath)
 {
     TCHAR *p;
     if ((p = _tcsrchr(szPath, TEXT('.'))) != NULL)
-        lstrcpyn(szExt, p + 1, size);
+        return p + 1;
     else
-        *szExt = TEXT('\0');
+        return NULL;
 }
 
 BOOL FileTimeToLocalSystemTime(CONST FILETIME *pFt, PSYSTEMTIME pSt)
