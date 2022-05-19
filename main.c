@@ -483,13 +483,13 @@ static BOOL GetSavePath(HWND hwnd, int uID, PTSTR szPath, int size, PCTSTR szExt
     return TRUE;
 }
 
-static void ExportTsv(HWND hwnd)
+static void ExportToTsv(HWND hwnd)
 {
     TCHAR szBuf[MAX_PATH] = L"";
     ASSERT_VOID(GetSavePath(hwnd, IDS_TSV_FILE, szBuf, NELEMS(szBuf), L".tsv"));
     Lock(hwnd);
     UpdateStatus(IDS_EXPORT_START);
-    BOOL bRet = ExportToTsv(ghWndListView, szBuf);
+    BOOL bRet = ExportToTsvFile(ghWndListView, szBuf);
     UpdateStatusDone();
     UnLock(hwnd);
     if (bRet)
@@ -498,14 +498,14 @@ static void ExportTsv(HWND hwnd)
     MessageBox(hwnd, szBuf, NULL, MB_OK | MB_ICONERROR);
 }
 
-static void ExportHtml(HWND hwnd)
+static void ExportToHtml(HWND hwnd)
 {
     TCHAR szTitle[MAX_PATH], szBuf[MAX_PATH] = L"";
     GetWindowText(hwnd, szTitle, NELEMS(szTitle));
     ASSERT_VOID(GetSavePath(hwnd, IDS_HTML_FILE, szBuf, NELEMS(szBuf), L".html"));
     Lock(hwnd);
     UpdateStatus(IDS_EXPORT_START);
-    BOOL bRet = ExportToHtml(ghWndListView, szBuf, szTitle);
+    BOOL bRet = ExportToHtmlFile(ghWndListView, szBuf, szTitle);
     UpdateStatusDone();
     UnLock(hwnd);
     if (bRet)
@@ -523,8 +523,8 @@ static void Main_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
     HANDLE_ID(IDM_ABOUT, DialogBox(ghInstance, MAKEINTRESOURCE(DLG_ABOUT), hwnd, (DLGPROC)AboutDlgProc));
     HANDLE_ID(IDM_OPEN, OpenDirectory(hwnd));
     HANDLE_ID(IDM_REFRESH, Refresh(hwnd));
-    HANDLE_ID(IDM_EXPORT_TSV, ExportTsv(hwnd));
-    HANDLE_ID(IDM_EXPORT_HTML, ExportHtml(hwnd));
+    HANDLE_ID(IDM_EXPORT_TSV, ExportToTsv(hwnd));
+    HANDLE_ID(IDM_EXPORT_HTML, ExportToHtml(hwnd));
     HANDLE_ID(IDM_AUTOPROC, MessageBox(hwnd, L"Not supported yet.", NULL, MB_OK | MB_ICONERROR));
     HANDLE_ID(IDM_ITEM_OPEN, ShellOpen(hwnd));
     HANDLE_ID(IDM_ITEM_FOLDER, ShellFolder(hwnd));

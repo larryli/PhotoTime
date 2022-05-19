@@ -1,4 +1,4 @@
 #pragma once
 
-BOOL ExportToTsv(HWND hwndLV, PCTSTR szPath);
-BOOL ExportToHtml(HWND hwndLV, PCTSTR szPath, PCTSTR szTitle);
+BOOL ExportToTsvFile(HWND hWndLV, PCTSTR szPath);
+BOOL ExportToHtmlFile(HWND hWndLV, PCTSTR szPath, PCTSTR szTitle);

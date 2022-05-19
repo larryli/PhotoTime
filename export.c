@@ -28,31 +28,25 @@ static BOOL SaveString(HANDLE hFile, PCTSTR szBuf)
     return bRet;
 }
 
-BOOL ExportToTsv(HWND hwndLV, PCTSTR szPath)
+BOOL ExportToTsvFile(HWND hWndLV, PCTSTR szPath)
 {
     HANDLE hFile = CreateFile(szPath, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     ASSERT_FALSE(hFile != INVALID_HANDLE_VALUE);
     BOOL bRet = FALSE;
+    TCHAR szBuf[MAX_PATH] = L"";
     for (int i = 0; i < LV_ROWS; i++) {
-        TCHAR szBuf[MAX_PATH] = L"";
-        LV_COLUMN lvc = {
-            .mask = LVCF_TEXT,
-            .pszText = szBuf,
-            .cchTextMax = NELEMS(szBuf),
-        };
-        ListView_GetColumn(hwndLV, i, &lvc);
+        ListView_GetColumnText(hWndLV, i, szBuf, NELEMS(szBuf));
         if (i)
             ASSERT_END(SaveData(hFile, "\t", 1));
         ASSERT_END(SaveString(hFile, szBuf));
     }
     ASSERT_END(SaveData(hFile, "\r\n", 2));
-    int count = ListView_GetItemCount(hwndLV);
+    int count = ListView_GetItemCount(hWndLV);
     for (int idx = 0; idx < count; idx++) {
         for (int i = 0; i < LV_ROWS; i++) {
             if (i)
                 ASSERT_END(SaveData(hFile, "\t", 1));
-            TCHAR szBuf[MAX_PATH] = L"";
-            ListView_GetItemText(hwndLV, idx, i, szBuf, NELEMS(szBuf));
+            ListView_GetItemText(hWndLV, idx, i, szBuf, NELEMS(szBuf));
             ASSERT_END(SaveString(hFile, szBuf));
         }
         ASSERT_END(SaveData(hFile, "\r\n", 2));
@@ -63,7 +57,7 @@ end:
     return bRet;
 }
 
-BOOL ExportToHtml(HWND hwndLV, PCTSTR szPath, PCTSTR szTitle)
+BOOL ExportToHtmlFile(HWND hWndLV, PCTSTR szPath, PCTSTR szTitle)
 {
     HANDLE hFile = CreateFile(szPath, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     ASSERT_FALSE(hFile != INVALID_HANDLE_VALUE);
@@ -79,25 +73,19 @@ BOOL ExportToHtml(HWND hwndLV, PCTSTR szPath, PCTSTR szTitle)
     ASSERT_END(SaveData(hFile, (void *)body, strlen(body)));
     ASSERT_END(SaveString(hFile, szTitle));
     ASSERT_END(SaveData(hFile, (void *)table, strlen(table)));
+    TCHAR szBuf[MAX_PATH] = L"";
     for (int i = 0; i < LV_ROWS; i++) {
-        TCHAR szBuf[MAX_PATH] = L"";
-        LV_COLUMN lvc = {
-            .mask = LVCF_TEXT,
-            .pszText = szBuf,
-            .cchTextMax = NELEMS(szBuf),
-        };
-        ListView_GetColumn(hwndLV, i, &lvc);
+        ListView_GetColumnText(hWndLV, i, szBuf, NELEMS(szBuf));
         ASSERT_END(SaveData(hFile, "<th>", 4));
         ASSERT_END(SaveString(hFile, szBuf));
         ASSERT_END(SaveData(hFile, "</th>\n", 6));
     }
     ASSERT_END(SaveData(hFile, (void *)tbody, strlen(tbody)));
-    int count = ListView_GetItemCount(hwndLV);
+    int count = ListView_GetItemCount(hWndLV);
     for (int idx = 0; idx < count; idx++) {
         ASSERT_END(SaveData(hFile, "<tr>\n", 5));
         for (int i = 0; i < LV_ROWS; i++) {
-            TCHAR szBuf[MAX_PATH] = L"";
-            ListView_GetItemText(hwndLV, idx, i, szBuf, NELEMS(szBuf));
+            ListView_GetItemText(hWndLV, idx, i, szBuf, NELEMS(szBuf));
             ASSERT_END(SaveData(hFile, "<td>", 4));
             ASSERT_END(SaveString(hFile, szBuf));
             ASSERT_END(SaveData(hFile, "</td>\n", 6));
