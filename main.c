@@ -294,6 +294,7 @@ static void OpenDirectory(HWND hwnd)
     TCHAR szTitle[MAX_PATH];
     ASSERT_VOID(LoadString(ghInstance, IDS_SELECT_PHOTO_DIRECTORY, szTitle, NELEMS(szTitle)));
     BROWSEINFO bInfo = {
+        .hwndOwner = hwnd,
         .lpszTitle = szTitle,
         .ulFlags = BIF_RETURNONLYFSDIRS | BIF_VALIDATE | BIF_USENEWUI | BIF_NONEWFOLDERBUTTON,
     };
@@ -485,7 +486,7 @@ static BOOL GetSavePath(HWND hwnd, int uID, PTSTR szPath, int size, PCTSTR szExt
 
 static void ExportToTsv(HWND hwnd)
 {
-    TCHAR szBuf[MAX_PATH] = L"";
+    TCHAR szBuf[MAX_PATH] = L"*.tsv";
     ASSERT_VOID(GetSavePath(hwnd, IDS_TSV_FILE, szBuf, NELEMS(szBuf), L".tsv"));
     Lock(hwnd);
     UpdateStatus(IDS_EXPORT_START);
@@ -500,7 +501,7 @@ static void ExportToTsv(HWND hwnd)
 
 static void ExportToHtml(HWND hwnd)
 {
-    TCHAR szTitle[MAX_PATH], szBuf[MAX_PATH] = L"";
+    TCHAR szTitle[MAX_PATH], szBuf[MAX_PATH] = L"*.html";
     GetWindowText(hwnd, szTitle, NELEMS(szTitle));
     ASSERT_VOID(GetSavePath(hwnd, IDS_HTML_FILE, szBuf, NELEMS(szBuf), L".html"));
     Lock(hwnd);
