@@ -5,7 +5,6 @@
 #define COBJMACROS
 #include <objidl.h>
 #include <shlwapi.h>
-
 #pragma comment(lib, "Shlwapi.lib")
 
 #include "gdipimage.h"

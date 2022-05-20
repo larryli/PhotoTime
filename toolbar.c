@@ -4,6 +4,7 @@
 
 #include "toolbar.h"
 #include "utils.h"
+
 #include "main.h"
 
 HWND CreateToolBarWnd(HWND hWndParent, HINSTANCE hInst)

@@ -1,14 +1,16 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <wchar.h>
 #include <commctrl.h>
 
-#include "main.h"
+#define __STDC_WANT_LIB_EXT1__ 1
+#include <tchar.h>
 
 #include "commctrls.h"
 #include "listview.h"
 #include "photo.h"
 #include "utils.h"
+
+#include "main.h"
 
 #define WM_SORT_START (WM_USER)
 
@@ -94,29 +96,29 @@ void ListViewDispInfo(HWND hWndParent, LV_DISPINFO *lpdi)
     TCHAR szBuf[MAX_PATH] = L"";
     switch (lpdi->item.iSubItem) {
     case 0:
-        lstrcpyn(lpdi->item.pszText, pPhoto->szFilename, lpdi->item.cchTextMax);
+        (void)_tcscpy_s(lpdi->item.pszText, lpdi->item.cchTextMax, pPhoto->szFilename);
         return;
     case 1:
         if (pPhoto->szSubPath)
-            lstrcpyn(lpdi->item.pszText, pPhoto->szSubPath, lpdi->item.cchTextMax);
+            (void)_tcscpy_s(lpdi->item.pszText, lpdi->item.cchTextMax, pPhoto->szSubPath);
         return;
     case 2:
-        swprintf(szBuf, MAX_PATH, L"%lld", pPhoto->filesize.QuadPart);
+        swprintf(szBuf, NELEMS(szBuf), L"%lld", pPhoto->filesize.QuadPart);
         break;
     case 3:
         ASSERT_VOID(pPhoto->pStFileTime);
-        FormatSystemTime(szBuf, MAX_PATH, pPhoto->pStFileTime);
+        FormatSystemTime(szBuf, NELEMS(szBuf), pPhoto->pStFileTime);
         break;
     case 4:
         ASSERT_VOID(pPhoto->pStExifTime);
-        FormatSystemTime(szBuf, MAX_PATH, pPhoto->pStExifTime);
+        FormatSystemTime(szBuf, NELEMS(szBuf), pPhoto->pStExifTime);
         break;
     case 5:
         ASSERT_VOID(pPhoto->pStFilenameTime);
-        FormatSystemTime(szBuf, MAX_PATH, pPhoto->pStFilenameTime);
+        FormatSystemTime(szBuf, NELEMS(szBuf), pPhoto->pStFilenameTime);
         break;
     }
-    lstrcpyn(lpdi->item.pszText, szBuf, lpdi->item.cchTextMax);
+    (void)_tcscpy_s(lpdi->item.pszText, lpdi->item.cchTextMax, szBuf);
 }
 
 LRESULT ListViewCustomDraw(HWND hWndParent, LPNMLVCUSTOMDRAW lpcd)

@@ -1,5 +1,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+
+#define __STDC_WANT_LIB_EXT1__ 1
 #include <tchar.h>
 
 #include "utils.h"
@@ -9,10 +11,10 @@ void CatFilePath(PTSTR szBuf, int size, PCTSTR szParent, PCTSTR szPath)
     if (!szBuf || size <= 0)
         return;
     if (szBuf != szParent && szParent)
-        lstrcpyn(szBuf, szParent, size);
+        (void)_tcscpy_s(szBuf, size, szParent);
     if (szPath) {
-        _tcsncat(szBuf, TEXT("\\"), size);
-        _tcsncat(szBuf, szPath, size);
+        (void)_tcscat_s(szBuf, size, TEXT("\\"));
+        (void)_tcscat_s(szBuf, size, szPath);
     }
 }
 

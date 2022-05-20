@@ -2,16 +2,16 @@
 #include <windows.h>
 #include <windowsx.h>
 #include <stdarg.h>
-#include <wchar.h>
-#include <tchar.h>
 #include <process.h>
 
 #include <shellapi.h>
 #include <Shlobj.h>
 #include <commctrl.h>
 #include <commdlg.h>
-
 #pragma comment(lib, "Shell32.lib")
+
+#define __STDC_WANT_LIB_EXT1__ 1
+#include <tchar.h>
 
 #include "about.h"
 #include "commctrls.h"
@@ -313,7 +313,7 @@ static void OpenDirectory(HWND hwnd)
     ASSERT_VOID(pParams);
     Lock(hwnd);
     pParams->hWnd = hwnd;
-    lstrcpyn(pParams->szPath, szPath, NELEMS(pParams->szPath));
+    (void)_tcscpy_s(pParams->szPath, NELEMS(pParams->szPath), szPath);
     ListView_DeleteAllItems(ghWndListView);
     ListViewCleanSort(ghWndListView);
     _beginthread(FindThread, 0, pParams);
@@ -458,10 +458,10 @@ static void CopyTsvToClip(HWND hwnd)
         TCHAR szItemBuf[MAX_PATH] = L"";
         ListView_GetItemText(ghWndListView, idx, i, szItemBuf, NELEMS(szItemBuf));
         if (i) {
-            _tcsncat(szBuf, TEXT("\t"), size);
-            _tcsncat(szBuf, szItemBuf, size);
+            (void)_tcscat_s(szBuf, size, L"\t");
+            (void)_tcscat_s(szBuf, size, szItemBuf);
         } else
-            lstrcpyn(szBuf, szItemBuf, size);
+            (void)_tcscpy_s(szBuf, size, szItemBuf);
     }
     CopyToClip(hwnd, szBuf);
 }
@@ -480,13 +480,13 @@ static BOOL GetSavePath(HWND hwnd, int uID, PTSTR szPath, int size, PCTSTR szExt
     };
     ASSERT_FALSE(GetSaveFileName(&ofn));
     if (!GetFileExt(szPath))
-        _tcsncat(szPath, szExt, NELEMS(szPath));
+        (void)_tcscat_s(szPath, size, szExt);
     return TRUE;
 }
 
 static void ExportToTsv(HWND hwnd)
 {
-    TCHAR szBuf[MAX_PATH] = L"*.tsv";
+    TCHAR szBuf[MAX_PATH] = L"";
     ASSERT_VOID(GetSavePath(hwnd, IDS_TSV_FILE, szBuf, NELEMS(szBuf), L".tsv"));
     Lock(hwnd);
     UpdateStatus(IDS_EXPORT_START);
@@ -501,7 +501,7 @@ static void ExportToTsv(HWND hwnd)
 
 static void ExportToHtml(HWND hwnd)
 {
-    TCHAR szTitle[MAX_PATH], szBuf[MAX_PATH] = L"*.html";
+    TCHAR szTitle[MAX_PATH], szBuf[MAX_PATH] = L"";
     GetWindowText(hwnd, szTitle, NELEMS(szTitle));
     ASSERT_VOID(GetSavePath(hwnd, IDS_HTML_FILE, szBuf, NELEMS(szBuf), L".html"));
     Lock(hwnd);
@@ -565,7 +565,7 @@ static BOOL ShowPhoto(int idx)
     if (pPhoto->szSubPath)
         CatFilePath(szPath, NELEMS(szPath), pPhoto->szSubPath, pPhoto->szFilename);
     else
-        lstrcpyn(szPath, pPhoto->szFilename, NELEMS(szPath));
+        (void)_tcscpy_s(szPath, NELEMS(szPath), pPhoto->szFilename);
     SIZE size;
     if (bRet && PhotoView_GetSize(ghWndPhotoView, &size)) {
         TCHAR szBuf[MAX_PATH] = L"";

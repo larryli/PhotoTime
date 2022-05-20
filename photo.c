@@ -1,7 +1,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <wchar.h>
+
 #define __STDC_WANT_LIB_EXT1__ 1
+#include <tchar.h>
 #include <stdlib.h>
 
 #include "photo.h"
@@ -66,7 +67,7 @@ static BOOL FindPhotoWithSub(PCTSTR szPath, PCTSTR szSub)
             if (szSub)
                 CatFilePath(szSubs, NELEMS(szSubs), szSub, wfd.cFileName);
             else
-                lstrcpyn(szSubs, wfd.cFileName, MAX_PATH);
+                (void)_tcscpy_s(szSubs, NELEMS(szSubs), wfd.cFileName);
             ASSERT_FALSE(FindPhotoWithSub(szFind, szSubs));
             continue;
         }
@@ -101,7 +102,7 @@ BOOL FindPhotos(PCTSTR szPath)
     int size = lstrlen(szPath) + 1;
     gPhotoLib.szPath = GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, sizeof(TCHAR) * size);
     ASSERT_FALSE(gPhotoLib.szPath);
-    lstrcpyn(gPhotoLib.szPath, szPath, size);
+    (void)_tcscpy_s(gPhotoLib.szPath, size, szPath);
     gPhotoLib.iSize = PHOTOS_SIZE;
     gPhotoLib.hPhotos = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(PHOTO *) * gPhotoLib.iSize);
     if (!gPhotoLib.hPhotos) {
@@ -264,13 +265,13 @@ static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
     int size = lstrlen(pWfd->cFileName) + 1;
     pPhoto->szFilename = (LPTSTR)GlobalAlloc(GMEM_FIXED, sizeof(TCHAR) * size);
     ASSERT_FAILED(pPhoto->szFilename);
-    lstrcpyn(pPhoto->szFilename, pWfd->cFileName, size);
+    (void)_tcscpy_s(pPhoto->szFilename, size, pWfd->cFileName);
 
     if (szSub) {
         size = lstrlen(szSub) + 1;
         pPhoto->szSubPath = (LPTSTR)GlobalAlloc(GMEM_FIXED, sizeof(TCHAR) * size);
         ASSERT_FAILED(pPhoto->szSubPath);
-        lstrcpyn(pPhoto->szSubPath, szSub, size);
+        (void)_tcscpy_s(pPhoto->szSubPath, size, szSub);
     }
 
     pPhoto->filesize.LowPart = pWfd->nFileSizeLow;

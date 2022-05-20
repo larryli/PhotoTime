@@ -3,9 +3,10 @@
 #include <wchar.h>
 #include <commctrl.h>
 
-#include "main.h"
 #include "statusbar.h"
 #include "utils.h"
+
+#include "main.h"
 
 static LONG scxSysLink = 248;
 

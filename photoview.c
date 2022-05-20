@@ -4,8 +4,9 @@
 
 #include "gdip.h"
 #include "photoview.h"
-#include "main.h"
 #include "utils.h"
+
+#include "main.h"
 
 #define HANDLE_PVM_SETPATH(hwnd,wParam,lParam,fn) ((fn)((hwnd),(PCTSTR)(wParam)))
 #define HANDLE_PVM_GETSIZE(hwnd,wParam,lParam,fn) ((fn)((hwnd),(PSIZE)(wParam)))

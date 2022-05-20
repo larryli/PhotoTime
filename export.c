@@ -63,7 +63,8 @@ BOOL ExportToHtmlFile(HWND hWndLV, PCTSTR szPath, PCTSTR szTitle)
     ASSERT_FALSE(hFile != INVALID_HANDLE_VALUE);
     BOOL bRet = FALSE;
     const char *head = "<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\">\n<style>\n"
-                        "table{border-collapse:collapse}table,th,td{border:1px solid;padding:0.2em 0.5em}\n</style>\n<title>";
+                        "table{border-collapse:collapse}table,th,td{border:1px solid;padding:0.2em 0.5em}"
+                        "tr:nth-child(even){background:#eee}\n</style>\n<title>";
     const char *body = "</title>\n</head><body>\n<h1>";
     const char *table = "</h1>\n<table><thead><tr>\n";
     const char *tbody = "</tr></thead><tbody>\n";

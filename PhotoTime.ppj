@@ -52,6 +52,7 @@ POC_PROJECT_ZIPEXTRA = #
 PhotoTime.exe: \
 	output\about.obj \
 	output\commctrls.obj \
+	output\export.obj \
 	output\gdip.obj \
 	output\listvisw.obj \
 	output\main.obj \
@@ -61,8 +62,7 @@ PhotoTime.exe: \
 	output\photoview.obj \
 	output\statusbar.obj \
 	output\toolbar.obj \
-	output\utils.obj \
-	output\export.obj
+	output\utils.obj
 	$(LINK) $(LINKFLAGS) -out:"$@" $**
 
 # 

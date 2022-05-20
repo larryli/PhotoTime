@@ -1,17 +1,19 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <windowsx.h>
-#include <commctrl.h>
 #include <wchar.h>
-#include <winver.h>
-#include <shellapi.h>
 
+#include <commctrl.h>
+#include <shellapi.h>
 #pragma comment(lib, "Shell32.lib")
+
+#include <winver.h>
 #pragma comment(lib, "Version.lib")
 
-#include "main.h"
 #include "about.h"
 #include "utils.h"
+
+#include "main.h"
 
 static void InitDialog(HWND hwnd)
 {
