@@ -61,7 +61,7 @@ static BOOL ToSystemTime(LPCTSTR szStr, PSYSTEMTIME pSt)
     return FileTimeToLocalSystemTime((PFILETIME)&ft, pSt);
 }
 
-static BOOL IsValidDate(PSYSTEMTIME pSt)
+BOOL IsValidDate(PSYSTEMTIME pSt)
 {
     WORD daysInMonth[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     if ((!(pSt->wYear % 4) && pSt->wYear % 100) || !(pSt->wYear % 400))

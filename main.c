@@ -28,11 +28,12 @@
 
 #define WM_SORT_START (WM_USER)
 #define WM_SORT_DONE (WM_USER + 1)
-#define WM_FIND_DONE (WM_USER + 2)
+#define WM_OPENDIR_DONE (WM_USER + 2)
 #define WM_REFRESH_DONE (WM_USER + 3)
 
-#define ID_TIMER_FIND 1
+#define ID_TIMER_OPENDIR 1
 #define ID_TIMER_REFRESH 2
+#define ID_TIMER_AUTOPROC 3
 
 static BOOL InitApplication(HINSTANCE);
 static BOOL InitInstance(HINSTANCE, int);
@@ -50,7 +51,7 @@ static void Main_OnTimer(HWND, UINT);
 
 static void Main_OnSortStart(HWND, int, BOOL);
 static void Main_OnSortDone(HWND);
-static void Main_OnFindDone(HWND, BOOL);
+static void Main_OnOpenDirDone(HWND, BOOL);
 static void Main_OnRefreshDone(HWND);
 
 static void Lock(HWND);
@@ -68,8 +69,8 @@ static BOOL bLock = FALSE;
 static int cxListView = 0;
 static int cxPhoto = 0;
 
-static int iRefreshStart = 0;
-static int iRefreshEnd = -1;
+static int iTraverseStart = 0;
+static int iTraverseEnd = -1;
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pszCmdLine, int nCmdShow)
 {
@@ -169,8 +170,8 @@ static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         return Main_OnSortStart(hwnd, (int)wParam, (BOOL)lParam), 0;
     case WM_SORT_DONE:
         return Main_OnSortDone(hwnd), 0;
-    case WM_FIND_DONE:
-        return Main_OnFindDone(hwnd, (BOOL)wParam), 0;
+    case WM_OPENDIR_DONE:
+        return Main_OnOpenDirDone(hwnd, (BOOL)wParam), 0;
     case WM_REFRESH_DONE:
         return Main_OnRefreshDone(hwnd), 0;
     default:
@@ -278,18 +279,18 @@ static void Main_OnMouseMove(HWND hwnd, int x, int y, UINT keyFlags)
 typedef struct {
     HWND hWnd;
     TCHAR szPath[MAX_PATH];
-} FIND_THREAD_PARAMS;
+} OPENDIR_THREAD_PARAMS;
 
-static void FindThread(PVOID pVoid)
+static void OpenDirThread(PVOID pVoid)
 {
-    FIND_THREAD_PARAMS *pParams = (FIND_THREAD_PARAMS *)pVoid;
+    OPENDIR_THREAD_PARAMS *pParams = (OPENDIR_THREAD_PARAMS *)pVoid;
     WPARAM wParam = (WPARAM)FindPhotos(pParams->szPath);
-    SendMessage(pParams->hWnd, WM_FIND_DONE, wParam, 0);
+    SendMessage(pParams->hWnd, WM_OPENDIR_DONE, wParam, 0);
     GlobalFree(pVoid);
     _endthread();
 }
 
-static void OpenDirectory(HWND hwnd)
+static void OpenDir(HWND hwnd)
 {
     TCHAR szTitle[MAX_PATH];
     ASSERT_VOID(LoadString(ghInstance, IDS_SELECT_PHOTO_DIRECTORY, szTitle, NELEMS(szTitle)));
@@ -308,22 +309,22 @@ static void OpenDirectory(HWND hwnd)
         SetWindowText(hwnd, szBuf);
     }
 
-    FIND_THREAD_PARAMS *pParams = (FIND_THREAD_PARAMS *)GlobalAlloc(
-        GMEM_FIXED | GMEM_ZEROINIT, sizeof(FIND_THREAD_PARAMS));
+    OPENDIR_THREAD_PARAMS *pParams = (OPENDIR_THREAD_PARAMS *)GlobalAlloc(
+        GMEM_FIXED | GMEM_ZEROINIT, sizeof(OPENDIR_THREAD_PARAMS));
     ASSERT_VOID(pParams);
     Lock(hwnd);
     pParams->hWnd = hwnd;
     (void)_tcscpy_s(pParams->szPath, NELEMS(pParams->szPath), szPath);
     ListView_DeleteAllItems(ghWndListView);
     ListViewCleanSort(ghWndListView);
-    _beginthread(FindThread, 0, pParams);
+    _beginthread(OpenDirThread, 0, pParams);
     TCHAR szBuf[MAX_PATH];
-    if (LoadString(ghInstance, IDS_FIND_START, szBuf, NELEMS(szBuf)))
+    if (LoadString(ghInstance, IDS_OPENDIR_START, szBuf, NELEMS(szBuf)))
         SetStatusBarText(ghWndStatusBar, 0, szBuf);
-#ifndef TIMER_FIND_ELAPSE
-#define TIMER_FIND_ELAPSE 200
+#ifndef TIMER_OPENDIR_ELAPSE
+#define TIMER_OPENDIR_ELAPSE 200
 #endif
-    SetTimer(hwnd, ID_TIMER_FIND, TIMER_FIND_ELAPSE, NULL);
+    SetTimer(hwnd, ID_TIMER_OPENDIR, TIMER_OPENDIR_ELAPSE, NULL);
 }
 
 static void UpdateStatus(UINT uId, ...)
@@ -350,35 +351,57 @@ static void UpdateStatusDone(void)
 typedef struct {
     HWND hWnd;
     int *done;
-} REFRESH_THREAD_PARAMS;
+} TRAVERSE_THREAD_PARAMS;
 
 static void RefreshThread(PVOID pVoid)
 {
-    REFRESH_THREAD_PARAMS *pParams = (REFRESH_THREAD_PARAMS *)pVoid;
+    TRAVERSE_THREAD_PARAMS *pParams = (TRAVERSE_THREAD_PARAMS *)pVoid;
     RefreshPhotos(pParams->done);
     SendMessage(pParams->hWnd, WM_REFRESH_DONE, 0, 0);
     GlobalFree(pVoid);
     _endthread();
 }
 
-static void Refresh(HWND hwnd)
+static void AutoProcThread(PVOID pVoid)
+{
+    TRAVERSE_THREAD_PARAMS *pParams = (TRAVERSE_THREAD_PARAMS *)pVoid;
+    AutoProcPhotos(pParams->done);
+    SendMessage(pParams->hWnd, WM_REFRESH_DONE, 0, 0);
+    GlobalFree(pVoid);
+    _endthread();
+}
+
+static void Traverse(HWND hwnd, void (*thread)(void *), UINT uId, UINT_PTR uTimer, UINT uElapse)
 {
     ASSERT_VOID(gPhotoLib.iCount > 0);
     ASSERT_VOID(gPhotoLib.pPhotos);
-    REFRESH_THREAD_PARAMS *pParams = (REFRESH_THREAD_PARAMS *)GlobalAlloc(
-        GMEM_FIXED | GMEM_ZEROINIT, sizeof(REFRESH_THREAD_PARAMS));
+    TRAVERSE_THREAD_PARAMS *pParams = (TRAVERSE_THREAD_PARAMS *)GlobalAlloc(
+        GMEM_FIXED | GMEM_ZEROINIT, sizeof(TRAVERSE_THREAD_PARAMS));
     ASSERT_VOID(pParams);
     Lock(hwnd);
     pParams->hWnd = hwnd;
-    pParams->done = &iRefreshEnd;
-    iRefreshStart = 0;
-    iRefreshEnd = -1;
-    _beginthread(RefreshThread, 0, pParams);
-    UpdateStatus(IDS_REFRESH_START, gPhotoLib.iCount);
+    pParams->done = &iTraverseEnd;
+    iTraverseStart = 0;
+    iTraverseEnd = -1;
+    _beginthread(thread, 0, pParams);
+    UpdateStatus(uId, gPhotoLib.iCount);
+    SetTimer(hwnd, uTimer, uElapse, NULL);
+}
+
+static void Refresh(HWND hwnd)
+{
 #ifndef TIMER_REFRESH_ELAPSE
 #define TIMER_REFRESH_ELAPSE 300
 #endif
-    SetTimer(hwnd, ID_TIMER_REFRESH, TIMER_REFRESH_ELAPSE, NULL);
+    Traverse(hwnd, RefreshThread, IDS_REFRESH_START, ID_TIMER_REFRESH, TIMER_REFRESH_ELAPSE);
+}
+
+static void AutoProc(HWND hwnd)
+{
+#ifndef TIMER_AUTOPROC_ELAPSE
+#define TIMER_AUTOPROC_ELAPSE 300
+#endif
+    Traverse(hwnd, AutoProcThread, IDS_AUTOPROC_START, ID_TIMER_AUTOPROC, TIMER_AUTOPROC_ELAPSE);
 }
 
 static BOOL GetPhotoPath(PTSTR szPath, int size, int idx)
@@ -522,11 +545,11 @@ static void Main_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
     switch (id) {
     HANDLE_ID(IDM_EXIT, PostMessage(hwnd, WM_CLOSE, 0, 0L));
     HANDLE_ID(IDM_ABOUT, DialogBox(ghInstance, MAKEINTRESOURCE(DLG_ABOUT), hwnd, (DLGPROC)AboutDlgProc));
-    HANDLE_ID(IDM_OPEN, OpenDirectory(hwnd));
+    HANDLE_ID(IDM_OPEN, OpenDir(hwnd));
     HANDLE_ID(IDM_REFRESH, Refresh(hwnd));
     HANDLE_ID(IDM_EXPORT_TSV, ExportToTsv(hwnd));
     HANDLE_ID(IDM_EXPORT_HTML, ExportToHtml(hwnd));
-    HANDLE_ID(IDM_AUTOPROC, MessageBox(hwnd, L"Not supported yet.", NULL, MB_OK | MB_ICONERROR));
+    HANDLE_ID(IDM_AUTOPROC, AutoProc(hwnd));
     HANDLE_ID(IDM_ITEM_OPEN, ShellOpen(hwnd));
     HANDLE_ID(IDM_ITEM_FOLDER, ShellFolder(hwnd));
     HANDLE_ID(IDM_ITEM_PROPERTIES, ShellProperties(hwnd));
@@ -612,6 +635,10 @@ static LRESULT Main_OnNotify(HWND hwnd, int wParam, NMHDR *lParam)
         if (lParam->hwndFrom == GetStatusBarSysLinkWnd(ghWndStatusBar))
             ShellExecute(NULL, L"open", ((PNMLINK)lParam)->item.szUrl, NULL, NULL, SW_SHOW);
         break;
+    case NM_DBLCLK:
+        if (lParam->hwndFrom == ghWndListView)
+            ShellOpen(hwnd);
+        break;
     }
     return 0;
 }
@@ -619,13 +646,14 @@ static LRESULT Main_OnNotify(HWND hwnd, int wParam, NMHDR *lParam)
 static void Main_OnTimer(HWND hwnd, UINT id)
 {
     ASSERT_VOID(gPhotoLib.iCount > 0);
-    if (id == ID_TIMER_FIND) {
+    if (id == ID_TIMER_OPENDIR) {
         ListView_SetItemCount(ghWndListView, gPhotoLib.iCount);
-        UpdateStatus(IDS_FINDING, gPhotoLib.iCount);
-    } else if (id == ID_TIMER_REFRESH && iRefreshEnd >= iRefreshStart) {
-        ListView_RedrawItems(ghWndListView, iRefreshStart, iRefreshEnd);
-        iRefreshStart = iRefreshEnd + 1; // (1, 0) do not redraw
-        UpdateStatus(IDS_REFRESHING, gPhotoLib.iCount, iRefreshStart);
+        UpdateStatus(IDS_OPENDIR_RUN, gPhotoLib.iCount);
+    } else if ((id == ID_TIMER_REFRESH || ID_TIMER_AUTOPROC) && iTraverseEnd >= iTraverseStart) {
+        ListView_RedrawItems(ghWndListView, iTraverseStart, iTraverseEnd);
+        iTraverseStart = iTraverseEnd + 1; // (1, 0) do not redraw
+        UpdateStatus(id == ID_TIMER_REFRESH ? IDS_REFRESH_RUN : IDS_AUTOPROC_RUN,
+            gPhotoLib.iCount, iTraverseStart);
     }
 }
 
@@ -672,23 +700,23 @@ static void Main_OnSortDone(HWND hwnd)
     UnLock(hwnd);
 }
 
-static void Main_OnFindDone(HWND hwnd, BOOL b)
+static void Main_OnOpenDirDone(HWND hwnd, BOOL b)
 {
-    KillTimer(hwnd, ID_TIMER_FIND);
+    KillTimer(hwnd, ID_TIMER_OPENDIR);
     ListView_SetItemCount(ghWndListView, gPhotoLib.iCount);
     if (b)
         UpdateStatusDone();
     else
-        UpdateStatus(IDS_FIND_FAILED, gPhotoLib.iCount);
+        UpdateStatus(IDS_OPENDIR_FAILED, gPhotoLib.iCount);
     UnLock(hwnd);
 }
 
 static void Main_OnRefreshDone(HWND hwnd)
 {
-    if (iRefreshEnd >= iRefreshStart)
-        ListView_RedrawItems(ghWndListView, iRefreshStart, iRefreshEnd);
-    iRefreshStart = 0;
-    iRefreshEnd = -1;
+    if (iTraverseEnd >= iTraverseStart)
+        ListView_RedrawItems(ghWndListView, iTraverseStart, iTraverseEnd);
+    iTraverseStart = 0;
+    iTraverseEnd = -1;
     UpdateStatusDone();
     UnLock(hwnd);
 }

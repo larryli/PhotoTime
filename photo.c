@@ -154,7 +154,7 @@ void RefreshPhotos(int *done)
                 GlobalFree(pPhoto->pStFilenameTime);
                 pPhoto->pStFilenameTime = NULL;
             }
-            continue;
+            goto update;
         }
         if (!GetFileSizeEx(hFile, &pPhoto->filesize)) {
             pPhoto->filesize.LowPart = 0;
@@ -195,7 +195,68 @@ void RefreshPhotos(int *done)
             GlobalFree(pPhoto->pStFilenameTime);
             pPhoto->pStFilenameTime = NULL;
         }
+update:
+        if (done)
+            *done = i; // Updata
+    }
+}
 
+void AutoProcPhotos(int *done)
+{
+    ASSERT_VOID(gPhotoLib.iCount > 0);
+    ASSERT_VOID(gPhotoLib.pPhotos);
+    for (int i = 0; i < gPhotoLib.iCount; i++) {
+        PHOTO *pPhoto = gPhotoLib.pPhotos[i];
+        ASSERT_CONTINUE(pPhoto);
+        TCHAR szPath[MAX_PATH] = L"";
+        CatFilePath(szPath, NELEMS(szPath), gPhotoLib.szPath, pPhoto->szSubPath);
+        CatFilePath(szPath, NELEMS(szPath), szPath, pPhoto->szFilename);
+
+        if (pPhoto->pStExifTime) {
+            FILETIME ftExifTime;
+            LocalSystemTimeToFileTime(pPhoto->pStExifTime, &ftExifTime);
+            BOOL bDiff = TRUE;
+            if (pPhoto->pStFileTime) {
+                FILETIME ftFileTime;
+                LocalSystemTimeToFileTime(pPhoto->pStFileTime, &ftFileTime);
+                bDiff = (CompareFileTime(&ftExifTime, &ftFileTime) != 0);
+            }
+            if (bDiff) {
+                HANDLE hFile = CreateFile(szPath, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                if (hFile == INVALID_HANDLE_VALUE)
+                    goto update;
+                if (SetFileTime(hFile, &ftExifTime, NULL, &ftExifTime)) {
+                    if (!(pPhoto->pStFileTime))
+                        pPhoto->pStFileTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
+                    if (pPhoto->pStFileTime)
+                        CopyMemory(pPhoto->pStFileTime, pPhoto->pStExifTime, sizeof(SYSTEMTIME));
+                }
+                CloseHandle(hFile);
+            }
+        } else if (pPhoto->pStFilenameTime && GdipSaveImageWithTagSystemTime(szPath, pPhoto->pStFilenameTime)) {
+            if (!(pPhoto->pStExifTime))
+                pPhoto->pStExifTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
+            if (pPhoto->pStExifTime)
+                CopyMemory(pPhoto->pStExifTime, pPhoto->pStFilenameTime, sizeof(SYSTEMTIME));
+
+            FILETIME ftFilenameTime;
+            LocalSystemTimeToFileTime(pPhoto->pStFilenameTime, &ftFilenameTime);
+            HANDLE hFile = CreateFile(szPath, GENERIC_READ | FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+            if (hFile == INVALID_HANDLE_VALUE)
+                goto update;
+            if (SetFileTime(hFile, &ftFilenameTime, NULL, &ftFilenameTime)) {
+                if (!(pPhoto->pStFileTime))
+                    pPhoto->pStFileTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
+                if (pPhoto->pStFileTime)
+                    CopyMemory(pPhoto->pStFileTime, pPhoto->pStFilenameTime, sizeof(SYSTEMTIME));
+            }
+            if (!GetFileSizeEx(hFile, &pPhoto->filesize)) {
+                pPhoto->filesize.LowPart = 0;
+                pPhoto->filesize.HighPart = 0;
+            }
+            CloseHandle(hFile);
+        }
+update:
         if (done)
             *done = i; // Updata
     }
@@ -370,12 +431,10 @@ static int AscSubDirectory(const PHOTO **a, const PHOTO **b, void *d)
     if ((*a)->szSubPath == NULL) {
         if ((*b)->szSubPath == NULL)
             return 0;
-        else
-            return -1;
+        return -1;
     } else if ((*b)->szSubPath == NULL)
         return 1;
-    else
-        return _wcsicmp((*a)->szSubPath, (*b)->szSubPath);
+    return _wcsicmp((*a)->szSubPath, (*b)->szSubPath);
 }
 
 static int DescSubDirectory(const PHOTO **a, const PHOTO **b, void *d)
@@ -383,12 +442,10 @@ static int DescSubDirectory(const PHOTO **a, const PHOTO **b, void *d)
     if ((*a)->szSubPath == NULL) {
         if ((*b)->szSubPath == NULL)
             return 0;
-        else
-            return 1;
+        return 1;
     } else if ((*b)->szSubPath == NULL)
         return -1;
-    else
-        return _wcsicmp((*b)->szSubPath, (*a)->szSubPath);
+    return _wcsicmp((*b)->szSubPath, (*a)->szSubPath);
 }
 
 static int AscSize(const PHOTO **a, const PHOTO **b, void *d)
@@ -397,8 +454,7 @@ static int AscSize(const PHOTO **a, const PHOTO **b, void *d)
         return 1;
     else if ((*a)->filesize.QuadPart == (*b)->filesize.QuadPart)
         return 0;
-    else
-        return -1;
+    return -1;
 }
 
 static int DescSize(const PHOTO **a, const PHOTO **b, void *d)
@@ -407,25 +463,25 @@ static int DescSize(const PHOTO **a, const PHOTO **b, void *d)
         return -1;
     else if ((*a)->filesize.QuadPart == (*b)->filesize.QuadPart)
         return 0;
-    else
-        return 1;
+    return 1;
 }
 
 static int AscFileTime(const PHOTO **a, const PHOTO **b, void *d)
 {
     if ((*a)->pStFileTime == NULL) {
         if ((*b)->pStFileTime == NULL)
-                return 0;
-            else
-                return -1;
+            return 0;
+        return -1;
     } else if ((*b)->pStFileTime == NULL)
         return 1;
-    else {
-        FILETIME ftA, ftB;
-        SystemTimeToFileTime((*a)->pStFileTime, &ftA);
-        SystemTimeToFileTime((*b)->pStFileTime, &ftB);
-        return CompareFileTime(&ftA, &ftB);
-    }
+    FILETIME ftA, ftB;
+    if (SystemTimeToFileTime((*a)->pStFileTime, &ftA)) {
+        if (SystemTimeToFileTime((*b)->pStFileTime, &ftB))
+            return CompareFileTime(&ftA, &ftB);
+        return 1;
+    } else if (SystemTimeToFileTime((*b)->pStFileTime, &ftB))
+        return -1;
+    return 0;
 }
 
 static int DescFileTime(const PHOTO **a, const PHOTO **b, void *d)
@@ -437,78 +493,84 @@ static int DescFileTime(const PHOTO **a, const PHOTO **b, void *d)
                 return 1;
     } else if ((*b)->pStFileTime == NULL)
         return -1;
-    else {
-        FILETIME ftA, ftB;
-        SystemTimeToFileTime((*a)->pStFileTime, &ftA);
-        SystemTimeToFileTime((*b)->pStFileTime, &ftB);
-        return CompareFileTime(&ftB, &ftA);
-    }
+    FILETIME ftA, ftB;
+    if (SystemTimeToFileTime((*a)->pStFileTime, &ftA)) {
+        if (SystemTimeToFileTime((*b)->pStFileTime, &ftB))
+            return CompareFileTime(&ftB, &ftA);
+        return -1;
+    } else if (SystemTimeToFileTime((*b)->pStFileTime, &ftB))
+        return 1;
+    return 0;
 }
 
 static int AscExifTime(const PHOTO **a, const PHOTO **b, void *d)
 {
     if ((*a)->pStExifTime == NULL) {
         if ((*b)->pStExifTime == NULL)
-                return 0;
-            else
-                return -1;
+            return 0;
+        return -1;
     } else if ((*b)->pStExifTime == NULL)
         return 1;
-    else {
-        FILETIME ftA, ftB;
-        SystemTimeToFileTime((*a)->pStExifTime, &ftA);
-        SystemTimeToFileTime((*b)->pStExifTime, &ftB);
-        return CompareFileTime(&ftA, &ftB);
-    }
+    FILETIME ftA, ftB;
+    if (SystemTimeToFileTime((*a)->pStExifTime, &ftA)) {
+        if (SystemTimeToFileTime((*b)->pStExifTime, &ftB))
+            return CompareFileTime(&ftA, &ftB);
+        return 1;
+    } else if (SystemTimeToFileTime((*b)->pStExifTime, &ftB))
+        return -1;
+    return 0;
 }
 
 static int DescExifTime(const PHOTO **a, const PHOTO **b, void *d)
 {
     if ((*a)->pStExifTime == NULL) {
         if ((*b)->pStExifTime == NULL)
-                return 0;
-            else
-                return 1;
+            return 0;
+        return 1;
     } else if ((*b)->pStExifTime == NULL)
         return -1;
-    else {
-        FILETIME ftA, ftB;
-        SystemTimeToFileTime((*a)->pStExifTime, &ftA);
-        SystemTimeToFileTime((*b)->pStExifTime, &ftB);
-        return CompareFileTime(&ftB, &ftA);
-    }
+    FILETIME ftA, ftB;
+    if (SystemTimeToFileTime((*a)->pStExifTime, &ftA)) {
+        if (SystemTimeToFileTime((*b)->pStExifTime, &ftB))
+            return CompareFileTime(&ftB, &ftA);
+        return -1;
+    } else if (SystemTimeToFileTime((*b)->pStExifTime, &ftB))
+        return 1;
+    return 0;
 }
 
 static int AscFilenameTime(const PHOTO **a, const PHOTO **b, void *d)
 {
     if ((*a)->pStFilenameTime == NULL) {
         if ((*b)->pStFilenameTime == NULL)
-                return 0;
-            else
-                return -1;
+            return 0;
+        return -1;
     } else if ((*b)->pStFilenameTime == NULL)
         return 1;
-    else {
-        FILETIME ftA, ftB;
-        SystemTimeToFileTime((*a)->pStFilenameTime, &ftA);
-        SystemTimeToFileTime((*b)->pStFilenameTime, &ftB);
-        return CompareFileTime(&ftA, &ftB);
-    }
+    FILETIME ftA, ftB;
+    if (SystemTimeToFileTime((*a)->pStFilenameTime, &ftA)) {
+        if (SystemTimeToFileTime((*b)->pStFilenameTime, &ftB))
+            return CompareFileTime(&ftA, &ftB);
+        return 1;
+    } else if (SystemTimeToFileTime((*b)->pStFilenameTime, &ftB))
+        return -1;
+    return 0;
 }
 
 static int DescFilenameTime(const PHOTO **a, const PHOTO **b, void *d)
 {
    if ((*a)->pStFilenameTime == NULL) {
         if ((*b)->pStFilenameTime == NULL)
-                return 0;
-            else
-                return 1;
+            return 0;
+        return 1;
     } else if ((*b)->pStFilenameTime == NULL)
         return -1;
-    else {
-        FILETIME ftA, ftB;
-        SystemTimeToFileTime((*a)->pStFilenameTime, &ftA);
-        SystemTimeToFileTime((*b)->pStFilenameTime, &ftB);
-        return CompareFileTime(&ftB, &ftA);
-    }
+    FILETIME ftA, ftB;
+    if (SystemTimeToFileTime((*a)->pStFilenameTime, &ftA)) {
+        if (SystemTimeToFileTime((*b)->pStFilenameTime, &ftB))
+            return CompareFileTime(&ftB, &ftA);
+        return -1;
+    } else if (SystemTimeToFileTime((*b)->pStFilenameTime, &ftB))
+        return 1;
+    return 0;
 }

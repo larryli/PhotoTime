@@ -143,6 +143,8 @@ void *GdipLoadImage(LPCTSTR szFilePath)
     return image;
 }
 
+BOOL IsValidDate(PSYSTEMTIME pSt);
+
 BOOL GdipGetTagSystemTime(LPCTSTR szFilePath, PSYSTEMTIME pSt)
 {
     GpImage *image = GdipLoadImageFile(szFilePath);
@@ -157,9 +159,14 @@ BOOL GdipGetTagSystemTime(LPCTSTR szFilePath, PSYSTEMTIME pSt)
     ASSERT_OK_END(GdipGetPropertyItem(image, PropertyTagDateTime, size, pPropItem));
     ASSERT_END(pPropItem->type == PropertyTagTypeASCII);
     ZeroMemory(pSt, sizeof(SYSTEMTIME));
-    sscanf((char *)pPropItem->value, "%hu:%hu:%hu %hu:%hu:%hu",
-           &pSt->wYear, &pSt->wMonth, &pSt->wDay, &pSt->wHour, &pSt->wMinute, &pSt->wSecond);
-    bRet = TRUE;
+    int nArgs = sscanf((char *)pPropItem->value, "%hu:%hu:%hu %hu:%hu:%hu",
+                       &pSt->wYear, &pSt->wMonth, &pSt->wDay, &pSt->wHour, &pSt->wMinute, &pSt->wSecond);
+    if (nArgs == 6) {
+        if (pSt->wHour == 24) // fix
+            pSt->wHour = 0;
+        if (IsValidDate(pSt) && pSt->wHour < 24 && pSt->wMinute < 60 && pSt->wSecond < 60)
+            bRet = TRUE;
+    }
 
 end:
     if (pPropItem)

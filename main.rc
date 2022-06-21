@@ -7,6 +7,18 @@
 
 LANGUAGE LANG_ENGLISH,SUBLANG_ENGLISH_US
 
+IDR_ICO_MAIN ICON "main.ico"
+
+IDR_BMP_TOOLBAR BITMAP "toolbar.bmp"
+
+IDR_BMP_UP BITMAP "up.bmp"
+
+IDR_BMP_DOWN BITMAP "down.bmp"
+
+1 MANIFEST "res1.xml"
+
+LANGUAGE LANG_CHINESE_SIMPLIFIED,SUBLANG_CHINESE_SIMPLIFIED
+
 DLG_ABOUT DIALOGEX DISCARDABLE 6, 18, 195, 77
 STYLE DS_SHELLFONT|WS_POPUP|DS_MODALFRAME|DS_CONTEXTHELP|DS_3DLOOK|DS_CENTER|WS_CAPTION|WS_SYSMENU|WS_VISIBLE
 CAPTION "关于"
@@ -41,14 +53,6 @@ IDR_MNU_MAIN MENUEX
   }
 }
 
-IDR_ICO_MAIN ICON "main.ico"
-
-IDR_BMP_TOOLBAR BITMAP "toolbar.bmp"
-
-IDR_BMP_UP BITMAP "up.bmp"
-
-IDR_BMP_DOWN BITMAP "down.bmp"
-
 IDR_MNU_CONTEXT MENUEX
 {
   POPUP "Context Menu", 0, 0, 0
@@ -63,11 +67,9 @@ IDR_MNU_CONTEXT MENUEX
   }
 }
 
-1 MANIFEST "res1.xml"
-
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 1,0,0,0
-PRODUCTVERSION 1,0,0,0
+FILEVERSION 1,0,0,1
+PRODUCTVERSION 1,0,0,1
 FILEFLAGSMASK 0x3F
 FILEFLAGS 0x0
 FILEOS VOS__WINDOWS32
@@ -79,10 +81,10 @@ FILESUBTYPE VFT2_UNKNOWN
     BLOCK "080404B0"
     {
       VALUE "FileDescription", "https://github.com/larryli/PhotoTime\0"
-      VALUE "FileVersion", "1.0.0.0\0"
+      VALUE "FileVersion", "1.0.0.1\0"
       VALUE "LegalCopyright", "Larry Li\0"
       VALUE "ProductName", "PhotoTime\0"
-      VALUE "ProductVersion", "1.0.0.0\0"
+      VALUE "ProductVersion", "1.0.0.1\0"
     }
   }
   BLOCK "VarFileInfo"
@@ -106,25 +108,27 @@ STRINGTABLE
   IDS_FILENAME_DATETIME, "文件名时间"
   IDS_LINK, "https://github.com/larryli/PhotoTime"
   IDS_SELECT_PHOTO_DIRECTORY, "请选择照片目录"
-  IDS_FIND_START, "正在查找照片..."
-  IDS_FINDING, "正在查找照片，已找到 %d 张..."
+  IDS_OPENDIR_START, "正在文件夹中查找照片..."
+  IDS_OPENDIR_RUN, "正在文件夹中查找照片，已找到 %d 张..."
 }
 
 STRINGTABLE
 {
-  IDS_FIND_FAILED, "查找照片失败，已找到 %d 张"
+  IDS_OPENDIR_FAILED, "在文件夹中查找照片失败，已找到 %d 张"
   IDS_DONE, "共 %d 张照片"
   IDS_SELECTED, "共 %d 张照片，当前选择 %d 张"
   IDS_LOAD_PHOTO_FAILED, "无法载入照片！"
   IDS_SHOW_PHOTO_FAILED, "显示照片失败。"
   IDS_REFRESH, "重新载入"
   IDS_REFRESH_START, "正在重新载入照片，共 %d 张..."
-  IDS_REFRESHING, "正在重新载入照片，共 %d 张，已重新载入 %d 张..."
+  IDS_REFRESH_RUN, "正在重新载入照片，共 %d 张，已重新载入 %d 张..."
   IDS_AUTOPROC, "自动处理"
   IDS_SORT_START, "正在排序照片，共 %d 张..."
   IDS_TSV_FILE, "TSV 文件 (*.tsv)\0*.tsv\0"
   IDS_HTML_FILE, "HTML 文件 (*.html; *.htm)\0*.html;*.htm\0"
   IDS_SAVE_FILE_FAILED, "无法保存文件！"
   IDS_EXPORT_START, "正在导出数据..."
+  IDS_AUTOPROC_START, "正在自动处理照片，共 %d 张..."
+  IDS_AUTOPROC_RUN, "正在自动处理照片，共 %d 张，已处理 %d 张..."
 }
 

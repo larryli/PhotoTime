@@ -22,3 +22,4 @@ extern PHOTOLIB gPhotoLib;
 BOOL FindPhotos(LPCTSTR szPath);
 void SortPhotos(int idx, BOOL isAscending);
 void RefreshPhotos(int *done);
+void AutoProcPhotos(int *done);
