@@ -6,6 +6,7 @@
 
 #include <shellapi.h>
 #include <Shlobj.h>
+#include <shlwapi.h>
 #include <commctrl.h>
 #include <commdlg.h>
 #pragma comment(lib, "Shell32.lib")
@@ -48,11 +49,14 @@ static void Main_OnCommand(HWND, int, HWND, UINT);
 static void Main_OnContextMenu(HWND, HWND, UINT, UINT);
 static void Main_OnDestroy(HWND);
 static void Main_OnTimer(HWND, UINT);
+static void Main_OnDropFiles(HWND, HDROP);
 
 static void Main_OnSortStart(HWND, int, BOOL);
 static void Main_OnSortDone(HWND);
 static void Main_OnOpenDirDone(HWND, BOOL);
 static void Main_OnRefreshDone(HWND);
+
+static BOOL ShowPhoto(int);
 
 static void Lock(HWND);
 static void UnLock(HWND);
@@ -164,6 +168,7 @@ static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
     HANDLE_MSG(hwnd, WM_LBUTTONUP, Main_OnLButtonUp);
     HANDLE_MSG(hwnd, WM_MOUSEMOVE, Main_OnMouseMove);
     HANDLE_MSG(hwnd, WM_TIMER, Main_OnTimer);
+    HANDLE_MSG(hwnd, WM_DROPFILES, Main_OnDropFiles);
     case WM_SETFOCUS:
         return SetFocus(ghWndListView), 0;
     case WM_SORT_START:
@@ -193,6 +198,7 @@ static LRESULT Main_OnCreate(HWND hwnd, LPCREATESTRUCT lParam)
     ghWndPhotoView = CreatePhotoViewWnd(hwnd, ghInstance);
     ASSERT_FALSE(ghWndPhotoView);
     SetFocus(ghWndListView);
+    DragAcceptFiles(hwnd, TRUE);
     return TRUE;
 }
 
@@ -290,19 +296,9 @@ static void OpenDirThread(PVOID pVoid)
     _endthread();
 }
 
-static void OpenDir(HWND hwnd)
+static void OpenDir(HWND hwnd, LPTSTR szPath)
 {
     TCHAR szTitle[MAX_PATH];
-    ASSERT_VOID(LoadString(ghInstance, IDS_SELECT_PHOTO_DIRECTORY, szTitle, NELEMS(szTitle)));
-    BROWSEINFO bInfo = {
-        .hwndOwner = hwnd,
-        .lpszTitle = szTitle,
-        .ulFlags = BIF_RETURNONLYFSDIRS | BIF_VALIDATE | BIF_USENEWUI | BIF_NONEWFOLDERBUTTON,
-    };
-    LPITEMIDLIST lpDlist = SHBrowseForFolder(&bInfo);
-    ASSERT_VOID(lpDlist);
-    TCHAR szPath[MAX_PATH] = {0};
-    ASSERT_VOID(SHGetPathFromIDList(lpDlist, szPath));
     if (LoadString(ghInstance, IDS_APPTITLE_FMT, szTitle, NELEMS(szTitle))) {
         TCHAR szBuf[MAX_PATH * 2] = {0};
         swprintf(szBuf, NELEMS(szBuf), szTitle, szPath);
@@ -315,6 +311,7 @@ static void OpenDir(HWND hwnd)
     Lock(hwnd);
     pParams->hWnd = hwnd;
     (void)_tcscpy_s(pParams->szPath, NELEMS(pParams->szPath), szPath);
+    ShowPhoto(-1);
     ListView_DeleteAllItems(ghWndListView);
     ListViewCleanSort(ghWndListView);
     _beginthread(OpenDirThread, 0, pParams);
@@ -325,6 +322,22 @@ static void OpenDir(HWND hwnd)
 #define TIMER_OPENDIR_ELAPSE 200
 #endif
     SetTimer(hwnd, ID_TIMER_OPENDIR, TIMER_OPENDIR_ELAPSE, NULL);
+}
+
+static void SelectDir(HWND hwnd)
+{
+    TCHAR szTitle[MAX_PATH];
+    ASSERT_VOID(LoadString(ghInstance, IDS_SELECT_PHOTO_DIRECTORY, szTitle, NELEMS(szTitle)));
+    BROWSEINFO bInfo = {
+        .hwndOwner = hwnd,
+        .lpszTitle = szTitle,
+        .ulFlags = BIF_RETURNONLYFSDIRS | BIF_VALIDATE | BIF_USENEWUI | BIF_NONEWFOLDERBUTTON,
+    };
+    LPITEMIDLIST lpDlist = SHBrowseForFolder(&bInfo);
+    ASSERT_VOID(lpDlist);
+    TCHAR szPath[MAX_PATH] = {0};
+    ASSERT_VOID(SHGetPathFromIDList(lpDlist, szPath));
+    OpenDir(hwnd, szPath);
 }
 
 static void UpdateStatus(UINT uId, ...)
@@ -545,7 +558,7 @@ static void Main_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
     switch (id) {
     HANDLE_ID(IDM_EXIT, PostMessage(hwnd, WM_CLOSE, 0, 0L));
     HANDLE_ID(IDM_ABOUT, DialogBox(ghInstance, MAKEINTRESOURCE(DLG_ABOUT), hwnd, (DLGPROC)AboutDlgProc));
-    HANDLE_ID(IDM_OPEN, OpenDir(hwnd));
+    HANDLE_ID(IDM_OPEN, SelectDir(hwnd));
     HANDLE_ID(IDM_REFRESH, Refresh(hwnd));
     HANDLE_ID(IDM_EXPORT_TSV, ExportToTsv(hwnd));
     HANDLE_ID(IDM_EXPORT_HTML, ExportToHtml(hwnd));
@@ -659,8 +672,26 @@ static void Main_OnTimer(HWND hwnd, UINT id)
 
 static void Main_OnDestroy(HWND hwnd)
 {
+    DragAcceptFiles(hwnd, FALSE);
     DestroyPhotoViewWnd(ghWndPhotoView);
     PostQuitMessage(0);
+}
+
+static void Main_OnDropFiles(HWND hwnd, HDROP hdrop)
+{
+    int nDrops = DragQueryFile(hdrop, 0xFFFFFFFF, NULL, 0);
+    if (nDrops > 0) {
+        TCHAR szPath[MAX_PATH];
+        for (int i = 0; i < nDrops; i++) {
+            if (DragQueryFile(hdrop, i, szPath, MAX_PATH)) {
+                if (PathIsDirectory(szPath)) {
+                    OpenDir(hwnd, szPath);
+                    break;
+                }
+            }
+        }
+    }
+    DragFinish(hdrop);
 }
 
 typedef struct {
@@ -731,11 +762,13 @@ static void Lock(HWND hwnd)
     ToolBar_EnableButton(ghWndToolBar, IDM_OPEN, FALSE);
     ToolBar_EnableButton(ghWndToolBar, IDM_REFRESH, FALSE);
     ToolBar_EnableButton(ghWndToolBar, IDM_AUTOPROC, FALSE);
+    DragAcceptFiles(hwnd, FALSE);
 }
 
 static void UnLock(HWND hwnd)
 {
     bLock = FALSE;
+    DragAcceptFiles(hwnd, TRUE);
     EnableMenuItem(GetMenu(hwnd), IDM_OPEN, MF_ENABLED);
     ToolBar_EnableButton(ghWndToolBar, IDM_OPEN, TRUE);
     if (gPhotoLib.iCount > 0 && gPhotoLib.pPhotos) {

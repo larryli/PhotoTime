@@ -26,10 +26,10 @@ POC_PROJECT_ARGUMENTS = #
 POC_PROJECT_WORKPATH = .#
 POC_PROJECT_ZIPEXTRA = #
 !elseif "$(POC_PROJECT_MODE)" == "Debug"
-CCFLAGS = -Tx64-coff -Ot -W1 -std:C17 -Ze -Zi -DUNICODE -D_UNICODE#
+CCFLAGS = -Tx64-coff -std:C17 -Zi -MT -Ot -Ob1 -fp:precise -W1 -Gd -Ze -DUNICODE -D_UNICODE#
 ASFLAGS = -AAMD64 -Zi#
 RCFLAGS = -r#
-LINKFLAGS = -machine:x64 -subsystem:windows -debug -debugtype:po kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib delayimp64.lib#
+LINKFLAGS = -machine:x64 -debug -debugtype:both -subsystem:windows kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib delayimp64.lib#
 SIGNFLAGS = -location:CU -store:MY -timeurl:http://timestamp.verisign.com/scripts/timstamp.dll -errkill#
 CC = pocc.exe#
 AS = poasm.exe#

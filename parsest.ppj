@@ -59,7 +59,8 @@ parsest.exe: \
 # 
 parsest\parsest.obj: \
 	parsest.c \
-	parsest.h
+	parsest.h \
+	utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 

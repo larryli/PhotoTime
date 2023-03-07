@@ -34,9 +34,10 @@ static BOOL IsPhotoFile(PCTSTR szPath)
         L"jpeg",
     };
     PCTSTR szExt = GetFileExt(szPath);
-    for (int i = 0; i < (int)NELEMS(szExts); i++)
-        if (_wcsicmp(szExt, szExts[i]) == 0)
-            return TRUE;
+    if (szExt)
+        for (int i = 0; i < (int)NELEMS(szExts); i++)
+            if (_wcsicmp(szExt, szExts[i]) == 0)
+                return TRUE;
     return FALSE;
 }
 
