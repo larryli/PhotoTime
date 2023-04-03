@@ -271,18 +271,18 @@ typedef struct {
     __cmpfunc_s *desc;
 } CMP;
 
-static int AscFilename(const PHOTO **, const PHOTO **, void *);
-static int DescFilename(const PHOTO **, const PHOTO **, void *);
-static int AscSubDirectory(const PHOTO **, const PHOTO **, void *);
-static int DescSubDirectory(const PHOTO **, const PHOTO **, void *);
-static int AscSize(const PHOTO **, const PHOTO **, void *);
-static int DescSize(const PHOTO **, const PHOTO **, void *);
-static int AscFileTime(const PHOTO **, const PHOTO **, void *);
-static int DescFileTime(const PHOTO **, const PHOTO **, void *);
-static int AscExifTime(const PHOTO **, const PHOTO **, void *);
-static int DescExifTime(const PHOTO **, const PHOTO **, void *);
-static int AscFilenameTime(const PHOTO **, const PHOTO **, void *);
-static int DescFilenameTime(const PHOTO **, const PHOTO **, void *);
+static int __cdecl AscFilename(const PHOTO **, const PHOTO **, void *);
+static int __cdecl DescFilename(const PHOTO **, const PHOTO **, void *);
+static int __cdecl AscSubDirectory(const PHOTO **, const PHOTO **, void *);
+static int __cdecl DescSubDirectory(const PHOTO **, const PHOTO **, void *);
+static int __cdecl AscSize(const PHOTO **, const PHOTO **, void *);
+static int __cdecl DescSize(const PHOTO **, const PHOTO **, void *);
+static int __cdecl AscFileTime(const PHOTO **, const PHOTO **, void *);
+static int __cdecl DescFileTime(const PHOTO **, const PHOTO **, void *);
+static int __cdecl AscExifTime(const PHOTO **, const PHOTO **, void *);
+static int __cdecl DescExifTime(const PHOTO **, const PHOTO **, void *);
+static int __cdecl AscFilenameTime(const PHOTO **, const PHOTO **, void *);
+static int __cdecl DescFilenameTime(const PHOTO **, const PHOTO **, void *);
 
 static CMP cmps[] = {
     {AscFilename, DescFilename},
