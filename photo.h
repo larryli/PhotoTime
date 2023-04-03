@@ -17,9 +17,15 @@ typedef struct {
     int iSize;
 } PHOTOLIB;
 
+typedef enum {
+    AUTOPROC_ALL,
+    AUTOPROC_FILE,
+    AUTOPROC_EXIF,
+} AUTOPROCTYPE;
+
 extern PHOTOLIB gPhotoLib;
 
 BOOL FindPhotos(LPCTSTR szPath);
 void SortPhotos(int idx, BOOL isAscending);
 void ReloadPhotos(int *done);
-void AutoProcPhotos(int *done);
+void AutoProcPhotos(int *done, AUTOPROCTYPE type);

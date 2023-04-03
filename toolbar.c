@@ -30,11 +30,12 @@ HWND CreateToolBarWnd(HWND hWndParent, HINSTANCE hInst)
         {.iBitmap = 0, .idCommand = IDM_OPEN, .fsState = TBSTATE_ENABLED, .fsStyle = TBSTYLE_BUTTON},
         {.iBitmap = 2, .idCommand = IDM_RELOAD, .fsStyle = TBSTYLE_BUTTON},
         {.fsStyle = TBSTYLE_SEP},
-        {.iBitmap = 3, .idCommand = IDM_AUTOPROC, .fsStyle = TBSTYLE_BUTTON},
+        {.iBitmap = 3, .idCommand = IDM_AUTOPROC, .fsStyle = TBSTYLE_BUTTON | TBSTYLE_DROPDOWN},
         {.fsStyle = TBSTYLE_SEP},
         {.iBitmap = 1, .idCommand = IDM_EXIT, .fsState = TBSTATE_ENABLED, .fsStyle = TBSTYLE_BUTTON},
     };
     SendMessage(hWndTB, TB_ADDBUTTONS, NELEMS(tbb), (LPARAM)tbb);
+    SendMessage(hWndTB, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_DRAWDDARROWS);
     SetWindowLong(hWndTB, GWL_STYLE, GetWindowLong(hWndTB, GWL_STYLE) | TBSTYLE_FLAT);
     ShowWindow(hWndTB, SW_SHOW);
     return hWndTB;

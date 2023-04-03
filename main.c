@@ -364,6 +364,7 @@ static void UpdateStatusDone(void)
 typedef struct {
     HWND hWnd;
     int *done;
+    PVOID pVoid;
 } TRAVERSE_THREAD_PARAMS;
 
 static void __cdecl ReloadThread(PVOID pVoid)
@@ -378,13 +379,16 @@ static void __cdecl ReloadThread(PVOID pVoid)
 static void __cdecl AutoProcThread(PVOID pVoid)
 {
     TRAVERSE_THREAD_PARAMS *pParams = (TRAVERSE_THREAD_PARAMS *)pVoid;
-    AutoProcPhotos(pParams->done);
+#pragma warn(push)
+#pragma warn(disable: 2215)
+    AutoProcPhotos(pParams->done, (AUTOPROCTYPE)(pParams->pVoid));
+#pragma warn(pop)
     SendMessage(pParams->hWnd, WM_RELOAD_DONE, 0, 0);
     GlobalFree(pVoid);
     _endthread();
 }
 
-static void Traverse(HWND hwnd, void (*thread)(void *), UINT uId, UINT_PTR uTimer, UINT uElapse)
+static void Traverse(HWND hwnd, void (*thread)(PVOID), PVOID pVoid, UINT uId, UINT_PTR uTimer, UINT uElapse)
 {
     ASSERT_VOID(gPhotoLib.iCount > 0);
     ASSERT_VOID(gPhotoLib.pPhotos);
@@ -394,6 +398,7 @@ static void Traverse(HWND hwnd, void (*thread)(void *), UINT uId, UINT_PTR uTime
     Lock(hwnd);
     pParams->hWnd = hwnd;
     pParams->done = &iTraverseEnd;
+    pParams->pVoid = pVoid;
     iTraverseStart = 0;
     iTraverseEnd = -1;
     _beginthread(thread, 0, pParams);
@@ -406,15 +411,15 @@ static void Reload(HWND hwnd)
 #ifndef TIMER_RELOAD_ELAPSE
 #define TIMER_RELOAD_ELAPSE 300
 #endif
-    Traverse(hwnd, ReloadThread, IDS_RELOAD_START, ID_TIMER_RELOAD, TIMER_RELOAD_ELAPSE);
+    Traverse(hwnd, ReloadThread, NULL, IDS_RELOAD_START, ID_TIMER_RELOAD, TIMER_RELOAD_ELAPSE);
 }
 
-static void AutoProc(HWND hwnd)
+static void AutoProc(HWND hwnd, AUTOPROCTYPE type)
 {
 #ifndef TIMER_AUTOPROC_ELAPSE
 #define TIMER_AUTOPROC_ELAPSE 300
 #endif
-    Traverse(hwnd, AutoProcThread, IDS_AUTOPROC_START, ID_TIMER_AUTOPROC, TIMER_AUTOPROC_ELAPSE);
+    Traverse(hwnd, AutoProcThread, (PVOID)type, IDS_AUTOPROC_START, ID_TIMER_AUTOPROC, TIMER_AUTOPROC_ELAPSE);
 }
 
 static BOOL GetPhotoPath(PTSTR szPath, int size, int idx)
@@ -562,7 +567,9 @@ static void Main_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
     HANDLE_ID(IDM_RELOAD, Reload(hwnd));
     HANDLE_ID(IDM_EXPORT_TSV, ExportToTsv(hwnd));
     HANDLE_ID(IDM_EXPORT_HTML, ExportToHtml(hwnd));
-    HANDLE_ID(IDM_AUTOPROC, AutoProc(hwnd));
+    HANDLE_ID(IDM_AUTOPROC, AutoProc(hwnd, AUTOPROC_ALL));
+    HANDLE_ID(IDM_AUTOPROC_FILE, AutoProc(hwnd, AUTOPROC_FILE));
+    HANDLE_ID(IDM_AUTOPROC_EXIF, AutoProc(hwnd, AUTOPROC_EXIF));
     HANDLE_ID(IDM_ITEM_OPEN, ShellOpen(hwnd));
     HANDLE_ID(IDM_ITEM_FOLDER, ShellFolder(hwnd));
     HANDLE_ID(IDM_ITEM_PROPERTIES, ShellProperties(hwnd));
@@ -576,14 +583,9 @@ static void Main_OnContextMenu(HWND hwnd, HWND hwndContext, UINT xPos, UINT yPos
     if (hwndContext == ghWndListView && ListView_GetSelectedCount(ghWndListView)) {
         HMENU hMenuLoad = LoadMenu(ghInstance, MAKEINTRESOURCE(IDR_MNU_CONTEXT));
         HMENU hMenu = GetSubMenu(hMenuLoad, 0);
-
         TrackPopupMenu(hMenu,
                        TPM_LEFTALIGN | TPM_RIGHTBUTTON,
-                       xPos, yPos,
-                       0,
-                       hwnd,
-                       NULL);
-
+                       xPos, yPos, 0, hwnd, NULL);
         DestroyMenu(hMenuLoad);
     }
 }
@@ -628,8 +630,8 @@ static LRESULT Main_OnNotify(HWND hwnd, int wParam, NMHDR *lParam)
             ListViewDispInfo(hwnd, (LV_DISPINFO *)lParam);
         break;
     case LVN_ITEMCHANGED:
+#define lpNmLv ((LPNM_LISTVIEW)lParam)
         if (lParam->hwndFrom == ghWndListView) {
-            LPNM_LISTVIEW lpNmLv = (LPNM_LISTVIEW)lParam;
             if (lpNmLv->uChanged == LVIF_STATE) {
                 UpdateStatusDone();
                 if (lpNmLv->uNewState & (LVIS_FOCUSED | LVIS_SELECTED))
@@ -641,6 +643,25 @@ static LRESULT Main_OnNotify(HWND hwnd, int wParam, NMHDR *lParam)
         break;
     case NM_CUSTOMDRAW:
         return ListViewCustomDraw(hwnd, (LPNMLVCUSTOMDRAW)lParam);
+    case TBN_DROPDOWN:
+#define lpNmTb ((LPNMTOOLBAR)lParam)
+        if (lpNmTb->iItem == IDM_AUTOPROC) {
+            RECT rc;
+            SendMessage(lpNmTb->hdr.hwndFrom, TB_GETRECT, (WPARAM)lpNmTb->iItem, (LPARAM)&rc);
+            MapWindowPoints(lpNmTb->hdr.hwndFrom, HWND_DESKTOP, (LPPOINT)&rc, 2);
+            HMENU hMenuLoaded = LoadMenu(ghInstance, MAKEINTRESOURCE(IDR_MNU_AUTOPROC)); 
+            HMENU hPopupMenu = GetSubMenu(hMenuLoaded, 0);
+            TPMPARAMS tpm = {
+                .cbSize    = sizeof(TPMPARAMS),
+                .rcExclude = rc,
+            };
+            TrackPopupMenuEx(hPopupMenu, 
+                            TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_VERTICAL, 
+                             rc.left, rc.bottom, hwnd, &tpm);
+            DestroyMenu(hMenuLoaded);
+            return TBDDRET_DEFAULT;
+        }
+        return TBDDRET_NODEFAULT;
     case TTN_NEEDTEXT:
         ToolBarNeedText(hwnd, (LPTOOLTIPTEXT)lParam);
         break;
@@ -758,6 +779,7 @@ static void Lock(HWND hwnd)
     EnableMenuItem(GetMenu(hwnd), IDM_OPEN, MF_DISABLED);
     EnableMenuItem(GetMenu(hwnd), IDM_RELOAD, MF_DISABLED);
     EnableMenuItem(GetMenu(hwnd), IDM_AUTOPROC, MF_DISABLED);
+    EnableMenuItem(GetMenu(hwnd), IDM_AUTOPROC_SPEC, MF_DISABLED);
     EnableMenuItem(GetMenu(hwnd), IDM_EXPORT, MF_DISABLED);
     ToolBar_EnableButton(ghWndToolBar, IDM_OPEN, FALSE);
     ToolBar_EnableButton(ghWndToolBar, IDM_RELOAD, FALSE);
@@ -774,6 +796,7 @@ static void UnLock(HWND hwnd)
     if (gPhotoLib.iCount > 0 && gPhotoLib.pPhotos) {
         EnableMenuItem(GetMenu(hwnd), IDM_RELOAD, MF_ENABLED);
         EnableMenuItem(GetMenu(hwnd), IDM_AUTOPROC, MF_ENABLED);
+        EnableMenuItem(GetMenu(hwnd), IDM_AUTOPROC_SPEC, MF_ENABLED);
         EnableMenuItem(GetMenu(hwnd), IDM_EXPORT, MF_ENABLED);
         ToolBar_EnableButton(ghWndToolBar, IDM_RELOAD, TRUE);
         ToolBar_EnableButton(ghWndToolBar, IDM_AUTOPROC, TRUE);

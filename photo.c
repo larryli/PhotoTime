@@ -202,8 +202,10 @@ update:
     }
 }
 
-void AutoProcPhotos(int *done)
+void AutoProcPhotos(int *done, AUTOPROCTYPE type)
 {
+    BOOL bFile = (type == AUTOPROC_ALL || type == AUTOPROC_FILE);
+    BOOL bExif = (type == AUTOPROC_ALL || type == AUTOPROC_EXIF);
     ASSERT_VOID(gPhotoLib.iCount > 0);
     ASSERT_VOID(gPhotoLib.pPhotos);
     for (int i = 0; i < gPhotoLib.iCount; i++) {
@@ -224,7 +226,7 @@ void AutoProcPhotos(int *done)
                     goto update;
                 bDiff = (CompareFileTime(&ftExifTime, &ftFileTime) != 0);
             }
-            if (bDiff) {
+            if (bDiff && bFile) {
                 HANDLE hFile = CreateFile(szPath, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
                 if (hFile == INVALID_HANDLE_VALUE)
                     goto update;
@@ -236,29 +238,50 @@ void AutoProcPhotos(int *done)
                 }
                 CloseHandle(hFile);
             }
-        } else if (pPhoto->pStFilenameTime && GdipSaveImageWithTagSystemTime(szPath, pPhoto->pStFilenameTime)) {
-            if (!(pPhoto->pStExifTime))
-                pPhoto->pStExifTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
-            if (pPhoto->pStExifTime)
-                CopyMemory(pPhoto->pStExifTime, pPhoto->pStFilenameTime, sizeof(SYSTEMTIME));
+        } else if (pPhoto->pStFilenameTime) {
+            if (bExif && GdipSaveImageWithTagSystemTime(szPath, pPhoto->pStFilenameTime)) {
+                if (!(pPhoto->pStExifTime))
+                    pPhoto->pStExifTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
+                if (pPhoto->pStExifTime)
+                    CopyMemory(pPhoto->pStExifTime, pPhoto->pStFilenameTime, sizeof(SYSTEMTIME));
 
-            FILETIME ftFilenameTime;
-            if (!LocalSystemTimeToFileTime(pPhoto->pStFilenameTime, &ftFilenameTime))
-                goto update;
-            HANDLE hFile = CreateFile(szPath, GENERIC_READ | FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-            if (hFile == INVALID_HANDLE_VALUE)
-                goto update;
-            if (SetFileTime(hFile, &ftFilenameTime, NULL, &ftFilenameTime)) {
-                if (!(pPhoto->pStFileTime))
-                    pPhoto->pStFileTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
-                if (pPhoto->pStFileTime)
-                    CopyMemory(pPhoto->pStFileTime, pPhoto->pStFilenameTime, sizeof(SYSTEMTIME));
+                FILETIME ftFilenameTime;
+                if (bFile) { // update sync
+                    if (!LocalSystemTimeToFileTime(pPhoto->pStFilenameTime, &ftFilenameTime))
+                        goto update;
+                } else {     // keep origin
+                    if (!LocalSystemTimeToFileTime(pPhoto->pStFileTime, &ftFilenameTime))
+                        goto update;
+                }
+                HANDLE hFile = CreateFile(szPath, GENERIC_READ | FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                if (hFile == INVALID_HANDLE_VALUE)
+                    goto update;
+                if (SetFileTime(hFile, &ftFilenameTime, NULL, &ftFilenameTime)) {
+                    if (!(pPhoto->pStFileTime))
+                        pPhoto->pStFileTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
+                    if (pPhoto->pStFileTime)
+                        CopyMemory(pPhoto->pStFileTime, pPhoto->pStFilenameTime, sizeof(SYSTEMTIME));
+                }
+                if (!GetFileSizeEx(hFile, &pPhoto->filesize)) { // update filesize after update exif
+                    pPhoto->filesize.LowPart = 0;
+                    pPhoto->filesize.HighPart = 0;
+                }
+                CloseHandle(hFile);
+            } else if (bFile) {
+                FILETIME ftFilenameTime;
+                if (!LocalSystemTimeToFileTime(pPhoto->pStFilenameTime, &ftFilenameTime))
+                    goto update;
+                HANDLE hFile = CreateFile(szPath, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                if (hFile == INVALID_HANDLE_VALUE)
+                    goto update;
+                if (SetFileTime(hFile, &ftFilenameTime, NULL, &ftFilenameTime)) {
+                    if (!(pPhoto->pStFileTime))
+                        pPhoto->pStFileTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
+                    if (pPhoto->pStFileTime)
+                        CopyMemory(pPhoto->pStFileTime, pPhoto->pStFilenameTime, sizeof(SYSTEMTIME));
+                }
+                CloseHandle(hFile);
             }
-            if (!GetFileSizeEx(hFile, &pPhoto->filesize)) {
-                pPhoto->filesize.LowPart = 0;
-                pPhoto->filesize.HighPart = 0;
-            }
-            CloseHandle(hFile);
         }
 update:
         if (done)

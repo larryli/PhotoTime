@@ -44,6 +44,11 @@ IDR_MNU_MAIN MENUEX
     }
     MENUITEM "", 0, 0|MFT_SEPARATOR, 0
     MENUITEM "自动处理(&A)", IDM_AUTOPROC, 0, 0|MFS_GRAYED
+    POPUP "指定自动处理(&P)", IDM_AUTOPROC_SPEC, 0, 0|MFS_GRAYED
+    {
+      MENUITEM "仅文件修改时间(&F)", IDM_AUTOPROC_FILE, 0, 0
+      MENUITEM "仅 &Exif 时间", IDM_AUTOPROC_EXIF, 0, 0
+    }
     MENUITEM "", 0, 0|MFT_SEPARATOR, 0
     MENUITEM "退出(&X)", IDM_EXIT, 0, 0
   }
@@ -67,9 +72,18 @@ IDR_MNU_CONTEXT MENUEX
   }
 }
 
+IDR_MNU_AUTOPROC MENUEX
+{
+  POPUP "AutoProc Menu", 0, 0, 0
+  {
+    MENUITEM "仅自动处理文件修改时间(&F)", IDM_AUTOPROC_FILE, 0, 0
+    MENUITEM "仅自动处理 &Exif 时间", IDM_AUTOPROC_EXIF, 0, 0
+  }
+}
+
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 1,0,0,1
-PRODUCTVERSION 1,0,0,1
+FILEVERSION 1,0,1,0
+PRODUCTVERSION 1,0,1,0
 FILEFLAGSMASK 0x3F
 FILEFLAGS 0x0
 FILEOS VOS__WINDOWS32
@@ -81,10 +95,10 @@ FILESUBTYPE VFT2_UNKNOWN
     BLOCK "080404B0"
     {
       VALUE "FileDescription", "https://github.com/larryli/PhotoTime\0"
-      VALUE "FileVersion", "1.0.0.1\0"
+      VALUE "FileVersion", "1.0.1.0\0"
       VALUE "LegalCopyright", "Larry Li\0"
       VALUE "ProductName", "PhotoTime\0"
-      VALUE "ProductVersion", "1.0.0.1\0"
+      VALUE "ProductVersion", "1.0.1.0\0"
     }
   }
   BLOCK "VarFileInfo"
@@ -159,6 +173,11 @@ IDR_MNU_MAIN MENUEX
     }
     MENUITEM "", 0, 0|MFT_SEPARATOR, 0
     MENUITEM "&Autoprocess", IDM_AUTOPROC, 0, 0|MFS_GRAYED
+    POPUP "Specifies Auto&process", IDM_AUTOPROC_SPEC, 0, 0|MFS_GRAYED
+    {
+      MENUITEM "&File datetime only", IDM_AUTOPROC_FILE, 0, 0
+      MENUITEM "&Exif datetime only", IDM_AUTOPROC_EXIF, 0, 0
+    }
     MENUITEM "", 0, 0|MFT_SEPARATOR, 0
     MENUITEM "E&xit", IDM_EXIT, 0, 0
   }
@@ -201,9 +220,18 @@ IDR_MNU_CONTEXT MENUEX
   }
 }
 
+IDR_MNU_AUTOPROC MENUEX
+{
+  POPUP "AutoProc Menu", 0, 0, 0
+  {
+    MENUITEM "Autoprocess &file datetime only", IDM_AUTOPROC_FILE, 0, 0
+    MENUITEM "Autoprocess &exif datetime only", IDM_AUTOPROC_EXIF, 0, 0
+  }
+}
+
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 1,0,0,1
-PRODUCTVERSION 1,0,0,1
+FILEVERSION 1,0,1,0
+PRODUCTVERSION 1,0,1,0
 FILEFLAGSMASK 0x3F
 FILEFLAGS 0x0
 FILEOS VOS__WINDOWS32
@@ -215,10 +243,10 @@ FILESUBTYPE VFT2_UNKNOWN
     BLOCK "040904B0"
     {
       VALUE "FileDescription", "https://github.com/larryli/PhotoTime\0"
-      VALUE "FileVersion", "1.0.0.1\0"
+      VALUE "FileVersion", "1.0.1.0\0"
       VALUE "LegalCopyright", "Larry Li\0"
       VALUE "ProductName", "PhotoTime\0"
-      VALUE "ProductVersion", "1.0.0.1\0"
+      VALUE "ProductVersion", "1.0.1.0\0"
     }
   }
   BLOCK "VarFileInfo"
