@@ -28,7 +28,7 @@ HWND CreateToolBarWnd(HWND hWndParent, HINSTANCE hInst)
     TBBUTTON tbb[] = {
         {.fsStyle = TBSTYLE_SEP},
         {.iBitmap = 0, .idCommand = IDM_OPEN, .fsState = TBSTATE_ENABLED, .fsStyle = TBSTYLE_BUTTON},
-        {.iBitmap = 2, .idCommand = IDM_REFRESH, .fsStyle = TBSTYLE_BUTTON},
+        {.iBitmap = 2, .idCommand = IDM_RELOAD, .fsStyle = TBSTYLE_BUTTON},
         {.fsStyle = TBSTYLE_SEP},
         {.iBitmap = 3, .idCommand = IDM_AUTOPROC, .fsStyle = TBSTYLE_BUTTON},
         {.fsStyle = TBSTYLE_SEP},
@@ -49,8 +49,8 @@ void ToolBarNeedText(HWND hWndParent, LPTOOLTIPTEXT lpttt)
     case IDM_EXIT:
         lpttt->lpszText = (LPTSTR)IDS_EXIT;
         break;
-    case IDM_REFRESH:
-        lpttt->lpszText = (LPTSTR)IDS_REFRESH;
+    case IDM_RELOAD:
+        lpttt->lpszText = (LPTSTR)IDS_RELOAD;
         break;
     case IDM_AUTOPROC:
         lpttt->lpszText = (LPTSTR)IDS_AUTOPROC;

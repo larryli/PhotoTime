@@ -36,7 +36,7 @@ IDR_MNU_MAIN MENUEX
   POPUP "文件(&F)", 0, 0, 0
   {
     MENUITEM "打开文件夹(&O)", IDM_OPEN, 0, 0|MFS_DEFAULT
-    MENUITEM "重新载入(&R)", IDM_REFRESH, 0, 0|MFS_GRAYED
+    MENUITEM "重新载入(&R)", IDM_RELOAD, 0, 0|MFS_GRAYED
     POPUP "导出数据(&E)", IDM_EXPORT, 0, 0|MFS_GRAYED
     {
       MENUITEM "&TSV 文件（Execl）", IDM_EXPORT_TSV, 0, 0
@@ -58,7 +58,7 @@ IDR_MNU_CONTEXT MENUEX
   POPUP "Context Menu", 0, 0, 0
   {
     MENUITEM "打开(&O)", IDM_ITEM_OPEN, 0, 0|MFS_DEFAULT
-    MENUITEM "在文件夹中显示(&F)", IDM_ITEM_FOLDER, 0, 0
+    MENUITEM "在文件夹中显示(&E)", IDM_ITEM_FOLDER, 0, 0
     MENUITEM "", 0, 0|MFT_SEPARATOR, 0
     MENUITEM "复制完整文件路径(&C)", IDM_ITEM_COPYPATH, 0, 0
     MENUITEM "复制整行 TSV 数据(&T)", IDM_ITEM_COPYTSV, 0, 0
@@ -119,9 +119,9 @@ STRINGTABLE
   IDS_SELECTED, "共 %d 张照片，当前选择 %d 张"
   IDS_LOAD_PHOTO_FAILED, "无法载入照片！"
   IDS_SHOW_PHOTO_FAILED, "显示照片失败。"
-  IDS_REFRESH, "重新载入"
-  IDS_REFRESH_START, "正在重新载入照片，共 %d 张..."
-  IDS_REFRESH_RUN, "正在重新载入照片，共 %d 张，已重新载入 %d 张..."
+  IDS_RELOAD, "重新载入"
+  IDS_RELOAD_START, "正在重新载入照片，共 %d 张..."
+  IDS_RELOAD_RUN, "正在重新载入照片，共 %d 张，已重新载入 %d 张..."
   IDS_AUTOPROC, "自动处理"
   IDS_SORT_START, "正在排序照片，共 %d 张..."
   IDS_TSV_FILE, "TSV 文件 (*.tsv)\0*.tsv\0"
@@ -130,5 +130,100 @@ STRINGTABLE
   IDS_EXPORT_START, "正在导出数据..."
   IDS_AUTOPROC_START, "正在自动处理照片，共 %d 张..."
   IDS_AUTOPROC_RUN, "正在自动处理照片，共 %d 张，已处理 %d 张..."
+}
+
+LANGUAGE LANG_ENGLISH,SUBLANG_ENGLISH_US
+
+DLG_ABOUT DIALOGEX DISCARDABLE 6, 18, 195, 77
+STYLE DS_SHELLFONT|WS_POPUP|DS_MODALFRAME|DS_CONTEXTHELP|DS_3DLOOK|DS_CENTER|WS_CAPTION|WS_SYSMENU|WS_VISIBLE
+CAPTION "About"
+FONT 8, "MS Shell Dlg", 0, 0, 1
+{
+  CONTROL "OK", IDOK, "Button", WS_TABSTOP, 75, 55, 45, 15
+  CONTROL IDR_ICO_MAIN, -1, "Static", SS_ICON|SS_CENTERIMAGE, 5, 10, 26, 26
+  CONTROL "PhotoTime v1.0", IDD_APPNAME, "Static", WS_GROUP, 40, 10, 150, 10
+  CONTROL "Copyright(C) Larry Li", IDD_COPYRIGHT, "Static", WS_GROUP, 40, 22, 150, 10
+  CONTROL "<a href=\"https://github.com/larryli/PhotoTime\">https://github.com/larryli/PhotoTime</a>", IDD_WEBSITE, "SysLink", WS_TABSTOP, 40, 34, 150, 10
+}
+
+IDR_MNU_MAIN MENUEX
+{
+  POPUP "&File", 0, 0, 0
+  {
+    MENUITEM "&Open folder", IDM_OPEN, 0, 0|MFS_DEFAULT
+    MENUITEM "&Reload", IDM_RELOAD, 0, 0|MFS_GRAYED
+    POPUP "&Export", IDM_EXPORT, 0, 0|MFS_GRAYED
+    {
+      MENUITEM "&TSV file（Execl）", IDM_EXPORT_TSV, 0, 0
+      MENUITEM "&HTML file", IDM_EXPORT_HTML, 0, 0
+    }
+    MENUITEM "", 0, 0|MFT_SEPARATOR, 0
+    MENUITEM "&Autoprocess", IDM_AUTOPROC, 0, 0|MFS_GRAYED
+    MENUITEM "", 0, 0|MFT_SEPARATOR, 0
+    MENUITEM "E&xit", IDM_EXIT, 0, 0
+  }
+  POPUP "&Help", 0, 0, 0
+  {
+    MENUITEM "&About", IDM_ABOUT, 0, 0
+  }
+}
+
+STRINGTABLE
+{
+  IDS_APPTITLE, "PhotoTime"
+  IDS_APPTITLE_FMT, "%ls - PhotoTime"
+  IDS_READY, "Ready"
+  IDS_OPEN, "Open folder"
+  IDS_EXIT, "Exit"
+  IDS_FILENAME, "Filename"
+  IDS_SUBDIRECTORY, "Subdirectory"
+  IDS_SIZE, "Size"
+  IDS_LAST_WRITE, "File datetime"
+  IDS_EXIF_DATETIME, "Exif datetime"
+  IDS_FILENAME_DATETIME, "Filename datetime"
+  IDS_LINK, "https://github.com/larryli/PhotoTime"
+  IDS_SELECT_PHOTO_DIRECTORY, "Select the photo directory"
+  IDS_OPENDIR_START, "Finding the photos in the folder..."
+  IDS_OPENDIR_RUN, "Finding the photos in the folder, found %d photo(s)..."
+}
+
+IDR_MNU_CONTEXT MENUEX
+{
+  POPUP "Context Menu", 0, 0, 0
+  {
+    MENUITEM "&Open", IDM_ITEM_OPEN, 0, 0|MFS_DEFAULT
+    MENUITEM "View in &Explorer", IDM_ITEM_FOLDER, 0, 0
+    MENUITEM "", 0, 0|MFT_SEPARATOR, 0
+    MENUITEM "&Copy full path", IDM_ITEM_COPYPATH, 0, 0
+    MENUITEM "Copy &TSV data", IDM_ITEM_COPYTSV, 0, 0
+    MENUITEM "", 0, 0|MFT_SEPARATOR, 0
+    MENUITEM "&Property", IDM_ITEM_PROPERTIES, 0, 0
+  }
+}
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION 1,0,0,1
+PRODUCTVERSION 1,0,0,1
+FILEFLAGSMASK 0x3F
+FILEFLAGS 0x0
+FILEOS VOS__WINDOWS32
+FILETYPE VFT_APP
+FILESUBTYPE VFT2_UNKNOWN
+{
+  BLOCK "StringFileInfo"
+  {
+    BLOCK "040904B0"
+    {
+      VALUE "FileDescription", "https://github.com/larryli/PhotoTime\0"
+      VALUE "FileVersion", "1.0.0.1\0"
+      VALUE "LegalCopyright", "Larry Li\0"
+      VALUE "ProductName", "PhotoTime\0"
+      VALUE "ProductVersion", "1.0.0.1\0"
+    }
+  }
+  BLOCK "VarFileInfo"
+  {
+    VALUE "Translation", 0x409, 0x4B0
+  }
 }
 

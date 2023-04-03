@@ -9,8 +9,8 @@ POC_PROJECT_MODE = Release#
 POC_PROJECT_RESULTDIR = .#
 POC_PROJECT_OUTPUTDIR = output#
 !if "$(POC_PROJECT_MODE)" == "Release"
-CCFLAGS = -Tx64-coff -std:C17 -MT -Ot -Ox -Ob1 -fp:precise -W1 -Gd -Ze -DUNICODE -D_UNICODE#
-ASFLAGS = -AAMD64 -Gd#
+CCFLAGS = -Tx64-coff -arch:AVX2 -std:C11 -MT -Ot -Ox -Ob1 -fp:precise -W1 -Gz -Ze -DUNICODE -D_UNICODE#
+ASFLAGS = -AAMD64 -Gz#
 RCFLAGS = #
 LINKFLAGS = -machine:x64 -subsystem:windows kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib delayimp64.lib#
 SIGNFLAGS = -location:CU -store:MY -timeurl:http://timestamp.verisign.com/scripts/timstamp.dll -errkill#
@@ -26,9 +26,9 @@ POC_PROJECT_ARGUMENTS = #
 POC_PROJECT_WORKPATH = .#
 POC_PROJECT_ZIPEXTRA = #
 !elseif "$(POC_PROJECT_MODE)" == "Debug"
-CCFLAGS = -Tx64-coff -std:C17 -Zi -MT -Ot -Ob1 -fp:precise -W1 -Gd -Ze -DUNICODE -D_UNICODE#
-ASFLAGS = -AAMD64 -Zi#
-RCFLAGS = -r#
+CCFLAGS = -Tx64-coff -arch:AVX2 -std:C2X -Zi -MT -Ot -Ob1 -fp:precise -W1 -Gz -Ze -DUNICODE -D_UNICODE#
+ASFLAGS = -AAMD64 -Zi -Gz#
+RCFLAGS = #
 LINKFLAGS = -machine:x64 -debug -debugtype:both -subsystem:windows kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib delayimp64.lib#
 SIGNFLAGS = -location:CU -store:MY -timeurl:http://timestamp.verisign.com/scripts/timstamp.dll -errkill#
 CC = pocc.exe#
@@ -137,16 +137,6 @@ output\commctrls.obj: \
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
-# Build about.obj.
-# 
-output\about.obj: \
-	about.c \
-	about.h \
-	main.h \
-	utils.h
-	$(CC) $(CCFLAGS) "$!" -Fo"$@"
-
-# 
 # Build photo.obj.
 # 
 output\photo.obj: \
@@ -202,6 +192,16 @@ output\export.obj: \
 	export.c \
 	export.h \
 	listview.h \
+	main.h \
+	utils.h
+	$(CC) $(CCFLAGS) "$!" -Fo"$@"
+
+# 
+# Build about.obj.
+# 
+output\about.obj: \
+	about.c \
+	about.h \
 	main.h \
 	utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"

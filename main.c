@@ -30,10 +30,10 @@
 #define WM_SORT_START (WM_USER)
 #define WM_SORT_DONE (WM_USER + 1)
 #define WM_OPENDIR_DONE (WM_USER + 2)
-#define WM_REFRESH_DONE (WM_USER + 3)
+#define WM_RELOAD_DONE (WM_USER + 3)
 
 #define ID_TIMER_OPENDIR 1
-#define ID_TIMER_REFRESH 2
+#define ID_TIMER_RELOAD 2
 #define ID_TIMER_AUTOPROC 3
 
 static BOOL InitApplication(HINSTANCE);
@@ -54,7 +54,7 @@ static void Main_OnDropFiles(HWND, HDROP);
 static void Main_OnSortStart(HWND, int, BOOL);
 static void Main_OnSortDone(HWND);
 static void Main_OnOpenDirDone(HWND, BOOL);
-static void Main_OnRefreshDone(HWND);
+static void Main_OnReloadDone(HWND);
 
 static BOOL ShowPhoto(int);
 
@@ -177,8 +177,8 @@ static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         return Main_OnSortDone(hwnd), 0;
     case WM_OPENDIR_DONE:
         return Main_OnOpenDirDone(hwnd, (BOOL)wParam), 0;
-    case WM_REFRESH_DONE:
-        return Main_OnRefreshDone(hwnd), 0;
+    case WM_RELOAD_DONE:
+        return Main_OnReloadDone(hwnd), 0;
     default:
         return DefWindowProc(hwnd, msg, wParam, lParam);
     }
@@ -287,7 +287,7 @@ typedef struct {
     TCHAR szPath[MAX_PATH];
 } OPENDIR_THREAD_PARAMS;
 
-static void OpenDirThread(PVOID pVoid)
+static void __cdecl OpenDirThread(PVOID pVoid)
 {
     OPENDIR_THREAD_PARAMS *pParams = (OPENDIR_THREAD_PARAMS *)pVoid;
     WPARAM wParam = (WPARAM)FindPhotos(pParams->szPath);
@@ -366,20 +366,20 @@ typedef struct {
     int *done;
 } TRAVERSE_THREAD_PARAMS;
 
-static void RefreshThread(PVOID pVoid)
+static void __cdecl ReloadThread(PVOID pVoid)
 {
     TRAVERSE_THREAD_PARAMS *pParams = (TRAVERSE_THREAD_PARAMS *)pVoid;
-    RefreshPhotos(pParams->done);
-    SendMessage(pParams->hWnd, WM_REFRESH_DONE, 0, 0);
+    ReloadPhotos(pParams->done);
+    SendMessage(pParams->hWnd, WM_RELOAD_DONE, 0, 0);
     GlobalFree(pVoid);
     _endthread();
 }
 
-static void AutoProcThread(PVOID pVoid)
+static void __cdecl AutoProcThread(PVOID pVoid)
 {
     TRAVERSE_THREAD_PARAMS *pParams = (TRAVERSE_THREAD_PARAMS *)pVoid;
     AutoProcPhotos(pParams->done);
-    SendMessage(pParams->hWnd, WM_REFRESH_DONE, 0, 0);
+    SendMessage(pParams->hWnd, WM_RELOAD_DONE, 0, 0);
     GlobalFree(pVoid);
     _endthread();
 }
@@ -401,12 +401,12 @@ static void Traverse(HWND hwnd, void (*thread)(void *), UINT uId, UINT_PTR uTime
     SetTimer(hwnd, uTimer, uElapse, NULL);
 }
 
-static void Refresh(HWND hwnd)
+static void Reload(HWND hwnd)
 {
-#ifndef TIMER_REFRESH_ELAPSE
-#define TIMER_REFRESH_ELAPSE 300
+#ifndef TIMER_RELOAD_ELAPSE
+#define TIMER_RELOAD_ELAPSE 300
 #endif
-    Traverse(hwnd, RefreshThread, IDS_REFRESH_START, ID_TIMER_REFRESH, TIMER_REFRESH_ELAPSE);
+    Traverse(hwnd, ReloadThread, IDS_RELOAD_START, ID_TIMER_RELOAD, TIMER_RELOAD_ELAPSE);
 }
 
 static void AutoProc(HWND hwnd)
@@ -559,7 +559,7 @@ static void Main_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
     HANDLE_ID(IDM_EXIT, PostMessage(hwnd, WM_CLOSE, 0, 0L));
     HANDLE_ID(IDM_ABOUT, DialogBox(ghInstance, MAKEINTRESOURCE(DLG_ABOUT), hwnd, (DLGPROC)AboutDlgProc));
     HANDLE_ID(IDM_OPEN, SelectDir(hwnd));
-    HANDLE_ID(IDM_REFRESH, Refresh(hwnd));
+    HANDLE_ID(IDM_RELOAD, Reload(hwnd));
     HANDLE_ID(IDM_EXPORT_TSV, ExportToTsv(hwnd));
     HANDLE_ID(IDM_EXPORT_HTML, ExportToHtml(hwnd));
     HANDLE_ID(IDM_AUTOPROC, AutoProc(hwnd));
@@ -662,10 +662,10 @@ static void Main_OnTimer(HWND hwnd, UINT id)
     if (id == ID_TIMER_OPENDIR) {
         ListView_SetItemCount(ghWndListView, gPhotoLib.iCount);
         UpdateStatus(IDS_OPENDIR_RUN, gPhotoLib.iCount);
-    } else if ((id == ID_TIMER_REFRESH || ID_TIMER_AUTOPROC) && iTraverseEnd >= iTraverseStart) {
+    } else if ((id == ID_TIMER_RELOAD || ID_TIMER_AUTOPROC) && iTraverseEnd >= iTraverseStart) {
         ListView_RedrawItems(ghWndListView, iTraverseStart, iTraverseEnd);
         iTraverseStart = iTraverseEnd + 1; // (1, 0) do not redraw
-        UpdateStatus(id == ID_TIMER_REFRESH ? IDS_REFRESH_RUN : IDS_AUTOPROC_RUN,
+        UpdateStatus(id == ID_TIMER_RELOAD ? IDS_RELOAD_RUN : IDS_AUTOPROC_RUN,
             gPhotoLib.iCount, iTraverseStart);
     }
 }
@@ -742,7 +742,7 @@ static void Main_OnOpenDirDone(HWND hwnd, BOOL b)
     UnLock(hwnd);
 }
 
-static void Main_OnRefreshDone(HWND hwnd)
+static void Main_OnReloadDone(HWND hwnd)
 {
     if (iTraverseEnd >= iTraverseStart)
         ListView_RedrawItems(ghWndListView, iTraverseStart, iTraverseEnd);
@@ -756,11 +756,11 @@ static void Lock(HWND hwnd)
 {
     bLock = TRUE;
     EnableMenuItem(GetMenu(hwnd), IDM_OPEN, MF_DISABLED);
-    EnableMenuItem(GetMenu(hwnd), IDM_REFRESH, MF_DISABLED);
+    EnableMenuItem(GetMenu(hwnd), IDM_RELOAD, MF_DISABLED);
     EnableMenuItem(GetMenu(hwnd), IDM_AUTOPROC, MF_DISABLED);
     EnableMenuItem(GetMenu(hwnd), IDM_EXPORT, MF_DISABLED);
     ToolBar_EnableButton(ghWndToolBar, IDM_OPEN, FALSE);
-    ToolBar_EnableButton(ghWndToolBar, IDM_REFRESH, FALSE);
+    ToolBar_EnableButton(ghWndToolBar, IDM_RELOAD, FALSE);
     ToolBar_EnableButton(ghWndToolBar, IDM_AUTOPROC, FALSE);
     DragAcceptFiles(hwnd, FALSE);
 }
@@ -772,10 +772,10 @@ static void UnLock(HWND hwnd)
     EnableMenuItem(GetMenu(hwnd), IDM_OPEN, MF_ENABLED);
     ToolBar_EnableButton(ghWndToolBar, IDM_OPEN, TRUE);
     if (gPhotoLib.iCount > 0 && gPhotoLib.pPhotos) {
-        EnableMenuItem(GetMenu(hwnd), IDM_REFRESH, MF_ENABLED);
+        EnableMenuItem(GetMenu(hwnd), IDM_RELOAD, MF_ENABLED);
         EnableMenuItem(GetMenu(hwnd), IDM_AUTOPROC, MF_ENABLED);
         EnableMenuItem(GetMenu(hwnd), IDM_EXPORT, MF_ENABLED);
-        ToolBar_EnableButton(ghWndToolBar, IDM_REFRESH, TRUE);
+        ToolBar_EnableButton(ghWndToolBar, IDM_RELOAD, TRUE);
         ToolBar_EnableButton(ghWndToolBar, IDM_AUTOPROC, TRUE);
     }
 }
