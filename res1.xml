@@ -5,7 +5,7 @@
     type="win32"
     name="cn.larryli.PhotoTime"
     version="1.0.0.0"
-    processorArchitecture="amd64"
+    processorArchitecture="*"
 />
 
 <description>PhotoTime</description>
@@ -16,7 +16,7 @@
         type="win32"
         name="Microsoft.Windows.Common-Controls"
         version="6.0.0.0"
-        processorArchitecture="amd64"
+        processorArchitecture="*"
         publicKeyToken="6595b64144ccf1df"
         language="*"
     />
