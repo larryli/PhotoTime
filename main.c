@@ -1,4 +1,5 @@
 #define WIN32_LEAN_AND_MEAN
+#define COBJMACROS
 #include <windows.h>
 #include <windowsx.h>
 #include <stdarg.h>
@@ -6,10 +7,13 @@
 
 #include <shellapi.h>
 #include <Shlobj.h>
+#include <shobjidl.h>
 #include <shlwapi.h>
 #include <commctrl.h>
 #include <commdlg.h>
 #pragma comment(lib, "Shell32.lib")
+#pragma comment(lib, "ole32.lib")
+#pragma comment(lib, "uuid.lib")
 
 #define __STDC_WANT_LIB_EXT1__ 1
 #include <tchar.h>
@@ -328,6 +332,37 @@ static void SelectDir(HWND hwnd)
 {
     TCHAR szTitle[MAX_PATH];
     ASSERT_VOID(LoadString(ghInstance, IDS_SELECT_PHOTO_DIRECTORY, szTitle, NELEMS(szTitle)));
+    HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    if (SUCCEEDED(hr)) {
+        IFileOpenDialog *pFileOpen;
+        hr = CoCreateInstance(&CLSID_FileOpenDialog, NULL, CLSCTX_ALL, &IID_IFileOpenDialog,
+                              (void **)(&pFileOpen));
+        if (SUCCEEDED(hr)) {
+            hr = IFileDialog_SetTitle(pFileOpen, szTitle);
+            ASSERT_END(SUCCEEDED(hr));
+            hr = IFileOpenDialog_SetOptions(pFileOpen, FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM);
+            ASSERT_END(SUCCEEDED(hr));
+            hr = IFileDialog_Show(pFileOpen, NULL);
+            if (SUCCEEDED(hr)) {
+                IShellItem *pItem;
+                hr = IFileDialog_GetResult(pFileOpen, &pItem);
+                if (SUCCEEDED(hr)) {
+                    PWSTR pszPath;
+                    hr = IShellItem_GetDisplayName(pItem, SIGDN_FILESYSPATH, &pszPath);
+                    if (SUCCEEDED(hr)) {
+                        OpenDir(hwnd, pszPath);
+                        CoTaskMemFree(pszPath);
+                    }
+                    IShellItem_Release(pItem);
+                }
+            }
+end:
+            IFileDialog_Release(pFileOpen);
+            CoUninitialize();
+            return; // new open folder dialog
+        }
+        CoUninitialize();
+    }
     BROWSEINFO bInfo = {
         .hwndOwner = hwnd,
         .lpszTitle = szTitle,
