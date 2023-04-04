@@ -423,7 +423,7 @@ static void __cdecl AutoProcThread(PVOID pVoid)
     _endthread();
 }
 
-static void Traverse(HWND hwnd, void (*thread)(PVOID), PVOID pVoid, UINT uId, UINT_PTR uTimer, UINT uElapse)
+static void Traverse(HWND hwnd, void __cdecl (*thread)(PVOID), PVOID pVoid, UINT uId, UINT_PTR uTimer, UINT uElapse)
 {
     ASSERT_VOID(gPhotoLib.iCount > 0);
     ASSERT_VOID(gPhotoLib.pPhotos);
@@ -756,7 +756,7 @@ typedef struct {
     BOOL isAscending;
 } SORT_THREAD_PARAMS;
 
-static void SortThread(PVOID pVoid)
+static void __cdecl SortThread(PVOID pVoid)
 {
     SORT_THREAD_PARAMS *pParams = (SORT_THREAD_PARAMS *)pVoid;
     SortPhotos(pParams->columnIndex, pParams->isAscending);
