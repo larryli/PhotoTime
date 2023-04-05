@@ -42,7 +42,7 @@ static void InitDialog(HWND hwnd)
         swprintf(szBuf, NELEMS(szBuf), L"Copyright (C) %ls", (LPTSTR)ptr);
         Static_SetText(GetDlgItem(hwnd, IDD_COPYRIGHT), szBuf);
     }
-    swprintf(szBuf, NELEMS(szBuf), L"\\StringFileInfo\\%04X%04X\\%ls", *pLang, *(pLang + 1), L"FileDescription");
+    swprintf(szBuf, NELEMS(szBuf), L"\\StringFileInfo\\%04X%04X\\%ls", *pLang, *(pLang + 1), L"Comments");
     if (VerQueryValue(pInfo, szBuf, &ptr, &size)) {
         swprintf(szBuf, NELEMS(szBuf), L"<a href=\"%ls\">%ls</a>", (LPTSTR)ptr, (LPTSTR)ptr);
         Static_SetText(GetDlgItem(hwnd, IDD_WEBSITE), szBuf);
