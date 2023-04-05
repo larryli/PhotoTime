@@ -25,14 +25,17 @@ HWND CreateListViewWnd(HWND hWndParent, HINSTANCE hInst)
     HWND hWndLV = CreateWindowEx(WS_EX_CLIENTEDGE,
                                  WC_LISTVIEW,
                                  (LPTSTR) NULL,
-                                 WS_TABSTOP | WS_CHILD | WS_VISIBLE | LVS_SHOWSELALWAYS | LVS_REPORT | LVS_OWNERDATA,
+                                 WS_TABSTOP | WS_CHILD | WS_VISIBLE
+                                 | LVS_SHOWSELALWAYS | LVS_REPORT | LVS_OWNERDATA,
                                  0, 0, 0, 0,
                                  hWndParent,
                                  (HMENU) ID_LISTVIEW,
                                  hInst,
                                  NULL);
     ASSERT_NULL(hWndLV);
-    ListView_SetExtendedListViewStyle(hWndLV, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_INFOTIP);
+    ListView_SetExtendedListViewStyle(hWndLV,
+                                      LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES
+                                      | LVS_EX_INFOTIP | LVS_EX_DOUBLEBUFFER);
 
     int cxTime = 130;
     SIZE size;
