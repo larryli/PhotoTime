@@ -142,12 +142,12 @@ void ReloadPhotos(int *done)
 
         HANDLE hFile = CreateFile(szPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
         if (hFile == INVALID_HANDLE_VALUE) {
+            pPhoto->type = PHOTO_MISSING;
             pPhoto->filesize.LowPart = 0;
             pPhoto->filesize.HighPart = 0;
             if (pPhoto->pStFileTime) {
                 GlobalFree(pPhoto->pStFileTime);
                 pPhoto->pStFileTime = NULL;
-                pPhoto->type = PHOTO_MISSING;
             }
             if (pPhoto->pStExifTime) {
                 GlobalFree(pPhoto->pStExifTime);
