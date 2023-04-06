@@ -135,6 +135,7 @@ void ReloadPhotos(int *done)
     for (int i = 0; i < gPhotoLib.iCount; i++) {
         PHOTO *pPhoto = gPhotoLib.pPhotos[i];
         ASSERT_CONTINUE(pPhoto);
+        pPhoto->type = PHOTO_DEFAULT;
         TCHAR szPath[MAX_PATH] = L"";
         CatFilePath(szPath, NELEMS(szPath), gPhotoLib.szPath, pPhoto->szSubPath);
         CatFilePath(szPath, NELEMS(szPath), szPath, pPhoto->szFilename);
@@ -146,6 +147,7 @@ void ReloadPhotos(int *done)
             if (pPhoto->pStFileTime) {
                 GlobalFree(pPhoto->pStFileTime);
                 pPhoto->pStFileTime = NULL;
+                pPhoto->type = PHOTO_MISSING;
             }
             if (pPhoto->pStExifTime) {
                 GlobalFree(pPhoto->pStExifTime);
@@ -171,6 +173,7 @@ void ReloadPhotos(int *done)
         } else if (pPhoto->pStFileTime) {
             GlobalFree(pPhoto->pStFileTime);
             pPhoto->pStFileTime = NULL;
+            pPhoto->type = PHOTO_MISSING;
         }
         CloseHandle(hFile);
 
@@ -180,6 +183,9 @@ void ReloadPhotos(int *done)
                 pPhoto->pStExifTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
             if (pPhoto->pStExifTime)
                 CopyMemory(pPhoto->pStExifTime, &st, sizeof(SYSTEMTIME));
+            if (pPhoto->type == PHOTO_DEFAULT)
+                pPhoto->type = PSYSTEMTIME_EQUAL(pPhoto->pStExifTime, pPhoto->pStFileTime)
+                               ? PHOTO_RIGHT : PHOTO_ERROR;
         } else if (pPhoto->pStExifTime) {
             GlobalFree(pPhoto->pStExifTime);
             pPhoto->pStExifTime = NULL;
@@ -192,6 +198,9 @@ void ReloadPhotos(int *done)
                 pPhoto->pStFilenameTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
             if (pPhoto->pStFilenameTime)
                 CopyMemory(pPhoto->pStFilenameTime, &st, sizeof(SYSTEMTIME));
+            if (pPhoto->type == PHOTO_DEFAULT)
+                pPhoto->type = PSYSTEMTIME_EQUAL(pPhoto->pStFilenameTime, pPhoto->pStFileTime)
+                               ? PHOTO_RIGHT : PHOTO_WARN;
         } else if (pPhoto->pStFilenameTime) {
             GlobalFree(pPhoto->pStFilenameTime);
             pPhoto->pStFilenameTime = NULL;
@@ -211,30 +220,22 @@ void AutoProcPhotos(int *done, AUTOPROCTYPE type)
     for (int i = 0; i < gPhotoLib.iCount; i++) {
         PHOTO *pPhoto = gPhotoLib.pPhotos[i];
         ASSERT_CONTINUE(pPhoto);
+        ASSERT_CONTINUE(pPhoto->pStFileTime);
         TCHAR szPath[MAX_PATH] = L"";
         CatFilePath(szPath, NELEMS(szPath), gPhotoLib.szPath, pPhoto->szSubPath);
         CatFilePath(szPath, NELEMS(szPath), szPath, pPhoto->szFilename);
 
         if (pPhoto->pStExifTime) {
-            FILETIME ftExifTime;
-            if (!LocalSystemTimeToFileTime(pPhoto->pStExifTime, &ftExifTime))
-                goto update;
-            BOOL bDiff = TRUE;
-            if (pPhoto->pStFileTime) {
-                FILETIME ftFileTime;
-                if (!LocalSystemTimeToFileTime(pPhoto->pStFileTime, &ftFileTime))
+            if (bFile && !PSYSTEMTIME_EQUAL(pPhoto->pStExifTime, pPhoto->pStFileTime)) {
+                FILETIME ftTime;
+                if (!LocalSystemTimeToFileTime(pPhoto->pStExifTime, &ftTime))
                     goto update;
-                bDiff = (CompareFileTime(&ftExifTime, &ftFileTime) != 0);
-            }
-            if (bDiff && bFile) {
                 HANDLE hFile = CreateFile(szPath, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
                 if (hFile == INVALID_HANDLE_VALUE)
                     goto update;
-                if (SetFileTime(hFile, &ftExifTime, NULL, &ftExifTime)) {
-                    if (!(pPhoto->pStFileTime))
-                        pPhoto->pStFileTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
-                    if (pPhoto->pStFileTime)
-                        CopyMemory(pPhoto->pStFileTime, pPhoto->pStExifTime, sizeof(SYSTEMTIME));
+                if (SetFileTime(hFile, &ftTime, NULL, &ftTime)) {
+                    CopyMemory(pPhoto->pStFileTime, pPhoto->pStExifTime, sizeof(SYSTEMTIME));
+                    pPhoto->type = PHOTO_RIGHT;
                 }
                 CloseHandle(hFile);
             }
@@ -245,40 +246,41 @@ void AutoProcPhotos(int *done, AUTOPROCTYPE type)
                 if (pPhoto->pStExifTime)
                     CopyMemory(pPhoto->pStExifTime, pPhoto->pStFilenameTime, sizeof(SYSTEMTIME));
 
-                FILETIME ftFilenameTime;
+                FILETIME ftTime;
+                PHOTOTYPE type = PHOTO_ERROR;
                 if (bFile) { // update sync
-                    if (!LocalSystemTimeToFileTime(pPhoto->pStFilenameTime, &ftFilenameTime))
+                    if (!LocalSystemTimeToFileTime(pPhoto->pStFilenameTime, &ftTime))
                         goto update;
+                    type = PHOTO_RIGHT;
                 } else {     // keep origin
-                    if (!LocalSystemTimeToFileTime(pPhoto->pStFileTime, &ftFilenameTime))
+                    if (!LocalSystemTimeToFileTime(pPhoto->pStFileTime, &ftTime))
                         goto update;
+                    type = PSYSTEMTIME_EQUAL(pPhoto->pStFileTime, pPhoto->pStFilenameTime)
+                           ? PHOTO_RIGHT : PHOTO_ERROR;
                 }
                 HANDLE hFile = CreateFile(szPath, GENERIC_READ | FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
                 if (hFile == INVALID_HANDLE_VALUE)
                     goto update;
-                if (SetFileTime(hFile, &ftFilenameTime, NULL, &ftFilenameTime)) {
-                    if (!(pPhoto->pStFileTime))
-                        pPhoto->pStFileTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
-                    if (pPhoto->pStFileTime)
-                        CopyMemory(pPhoto->pStFileTime, pPhoto->pStFilenameTime, sizeof(SYSTEMTIME));
-                }
+                if (SetFileTime(hFile, &ftTime, NULL, &ftTime)) {
+                    CopyMemory(pPhoto->pStFileTime, pPhoto->pStFilenameTime, sizeof(SYSTEMTIME));
+                    pPhoto->type = type;
+                } else
+                    pPhoto->type = PHOTO_ERROR; // gdip write time
                 if (!GetFileSizeEx(hFile, &pPhoto->filesize)) { // update filesize after update exif
                     pPhoto->filesize.LowPart = 0;
                     pPhoto->filesize.HighPart = 0;
                 }
                 CloseHandle(hFile);
             } else if (bFile) {
-                FILETIME ftFilenameTime;
-                if (!LocalSystemTimeToFileTime(pPhoto->pStFilenameTime, &ftFilenameTime))
+                FILETIME ftTime;
+                if (!LocalSystemTimeToFileTime(pPhoto->pStFilenameTime, &ftTime))
                     goto update;
                 HANDLE hFile = CreateFile(szPath, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
                 if (hFile == INVALID_HANDLE_VALUE)
                     goto update;
-                if (SetFileTime(hFile, &ftFilenameTime, NULL, &ftFilenameTime)) {
-                    if (!(pPhoto->pStFileTime))
-                        pPhoto->pStFileTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
-                    if (pPhoto->pStFileTime)
-                        CopyMemory(pPhoto->pStFileTime, pPhoto->pStFilenameTime, sizeof(SYSTEMTIME));
+                if (SetFileTime(hFile, &ftTime, NULL, &ftTime)) {
+                    CopyMemory(pPhoto->pStFileTime, pPhoto->pStFilenameTime, sizeof(SYSTEMTIME));
+                    pPhoto->type = PHOTO_RIGHT;
                 }
                 CloseHandle(hFile);
             }
@@ -349,6 +351,7 @@ static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
 {
     PHOTO *pPhoto = (PHOTO *)GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, sizeof(PHOTO));
     ASSERT_NULL(pPhoto);
+    pPhoto->type = PHOTO_DEFAULT;
 
     int size = lstrlen(pWfd->cFileName) + 1;
     pPhoto->szFilename = (LPTSTR)GlobalAlloc(GMEM_FIXED, sizeof(TCHAR) * size);
@@ -374,6 +377,9 @@ static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
         pPhoto->pStExifTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
         ASSERT_FAILED(pPhoto->pStExifTime);
         CopyMemory(pPhoto->pStExifTime, &st, sizeof(SYSTEMTIME));
+        if (pPhoto->type == PHOTO_DEFAULT)
+            pPhoto->type = PSYSTEMTIME_EQUAL(pPhoto->pStExifTime, pPhoto->pStFileTime)
+                           ? PHOTO_RIGHT : PHOTO_ERROR;
     }
 
     PARSEST_RESULT result;
@@ -382,6 +388,9 @@ static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
         pPhoto->pStFilenameTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
         ASSERT_FAILED(pPhoto->pStFilenameTime);
         CopyMemory(pPhoto->pStFilenameTime, &st, sizeof(SYSTEMTIME));
+        if (pPhoto->type == PHOTO_DEFAULT)
+            pPhoto->type = PSYSTEMTIME_EQUAL(pPhoto->pStFilenameTime, pPhoto->pStFileTime)
+                           ? PHOTO_RIGHT : PHOTO_WARN;
     }
 
     return pPhoto;

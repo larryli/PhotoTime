@@ -1,5 +1,13 @@
 #pragma once
 
+typedef enum {
+    PHOTO_DEFAULT,
+    PHOTO_MISSING,
+    PHOTO_RIGHT,
+    PHOTO_ERROR,
+    PHOTO_WARN
+} PHOTOTYPE;
+
 typedef struct {
     LPTSTR szFilename;
     LPTSTR szSubPath;
@@ -7,6 +15,7 @@ typedef struct {
     PSYSTEMTIME pStFileTime;
     PSYSTEMTIME pStExifTime;
     PSYSTEMTIME pStFilenameTime;
+    PHOTOTYPE type;
 } PHOTO;
 
 typedef struct {
@@ -29,3 +38,10 @@ BOOL FindPhotos(LPCTSTR szPath);
 void SortPhotos(int idx, BOOL isAscending);
 void ReloadPhotos(int *done);
 void AutoProcPhotos(int *done, AUTOPROCTYPE type);
+
+#define PSYSTEMTIME_EQUAL(a, b) ((a)->wYear == (b)->wYear \
+                                 && (a)->wMonth == (b)->wMonth \
+                                 && (a)->wDay == (b)->wDay \
+                                 && (a)->wHour == (b)->wHour \
+                                 && (a)->wMinute == (b)->wMinute \
+                                 && (a)->wSecond == (b)->wSecond)

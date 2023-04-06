@@ -134,8 +134,14 @@ LRESULT ListViewCustomDraw(HWND hWndParent, LPNMLVCUSTOMDRAW lpcd)
             lpcd->clrText = GetSysColor(COLOR_GRAYTEXT);
         else if (gPhotoLib.pPhotos) {
             PHOTO *pPhoto = gPhotoLib.pPhotos[(int)lpcd->nmcd.dwItemSpec];
-            if (!pPhoto || !(pPhoto->pStFileTime))
-                lpcd->clrText = RGB(255, 0 , 0); // RED
+            if (!pPhoto || pPhoto->type == PHOTO_MISSING)
+                lpcd->clrText = RGB(255, 0, 0); // RED
+            else if (pPhoto->type == PHOTO_ERROR)
+                lpcd->clrText = RGB(191, 191, 0); // YELLOW
+            else if (pPhoto->type == PHOTO_WARN)
+                lpcd->clrText = RGB(0, 0, 191); // BLUE
+            else if (pPhoto->type == PHOTO_RIGHT)
+                lpcd->clrText = RGB(0, 127, 0); // GREEN
         }
         if (lpcd->nmcd.dwItemSpec % 2)
             lpcd->clrTextBk = GetSysColor(COLOR_BTNFACE);
