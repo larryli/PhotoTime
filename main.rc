@@ -82,8 +82,8 @@ IDR_MNU_AUTOPROC MENUEX
 }
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 1,0,2,0
-PRODUCTVERSION 1,0,2,0
+FILEVERSION 1,0,2,1
+PRODUCTVERSION 1,0,2,1
 FILEFLAGSMASK 0x3F
 FILEFLAGS 0x0
 FILEOS VOS__WINDOWS32
@@ -96,10 +96,10 @@ FILESUBTYPE VFT2_UNKNOWN
     {
       VALUE "Comments", "https://github.com/larryli/PhotoTime\0"
       VALUE "FileDescription", "照片时间修改器\0"
-      VALUE "FileVersion", "1.0.2.0\0"
+      VALUE "FileVersion", "1.0.2.1\0"
       VALUE "LegalCopyright", "Larry Li\0"
       VALUE "ProductName", "PhotoTime\0"
-      VALUE "ProductVersion", "1.0.2.0\0"
+      VALUE "ProductVersion", "1.0.2.1\0"
     }
   }
   BLOCK "VarFileInfo"
@@ -173,8 +173,8 @@ IDR_MNU_AUTOPROC MENUEX
 }
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 1,0,2,0
-PRODUCTVERSION 1,0,2,0
+FILEVERSION 1,0,2,1
+PRODUCTVERSION 1,0,2,1
 FILEFLAGSMASK 0x3F
 FILEFLAGS 0x0
 FILEOS VOS__WINDOWS32
@@ -187,10 +187,10 @@ FILESUBTYPE VFT2_UNKNOWN
     {
       VALUE "Comments", "https://github.com/larryli/PhotoTime\0"
       VALUE "FileDescription", "PhotoTime Modifier\0"
-      VALUE "FileVersion", "1.0.2.0\0"
+      VALUE "FileVersion", "1.0.2.1\0"
       VALUE "LegalCopyright", "Larry Li\0"
       VALUE "ProductName", "PhotoTime\0"
-      VALUE "ProductVersion", "1.0.2.0\0"
+      VALUE "ProductVersion", "1.0.2.1\0"
     }
   }
   BLOCK "VarFileInfo"
