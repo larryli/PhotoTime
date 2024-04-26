@@ -423,7 +423,7 @@ static void __cdecl AutoProcThread(PVOID pVoid)
     _endthread();
 }
 
-static void Traverse(HWND hwnd, void __cdecl (*thread)(PVOID), PVOID pVoid, UINT uId, UINT_PTR uTimer, UINT uElapse)
+static void Traverse(HWND hwnd, void (__cdecl *thread)(PVOID), PVOID pVoid, UINT uId, UINT_PTR uTimer, UINT uElapse)
 {
     ASSERT_VOID(gPhotoLib.iCount > 0);
     ASSERT_VOID(gPhotoLib.pPhotos);

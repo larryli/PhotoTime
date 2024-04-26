@@ -255,7 +255,7 @@ BOOL GdipGetSize(void *data, SIZE *size)
 {
     GpImage *image = (GpImage *)data;
     ASSERT_FALSE(image);
-    ASSERT_OK_FALSE(GdipGetImageWidth(image, &size->cx));
-    ASSERT_OK_FALSE(GdipGetImageHeight(image, &size->cy));
+    ASSERT_OK_FALSE(GdipGetImageWidth(image, (UINT *)&size->cx));
+    ASSERT_OK_FALSE(GdipGetImageHeight(image, (UINT *)&size->cy));
     return TRUE;
 }

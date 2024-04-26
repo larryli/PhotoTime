@@ -1,7 +1,7 @@
 #pragma once
 // From fGdiPlusFlat.h
 
-#pragma comment (linker, "GdiPlus.lib")
+#pragma comment (lib, "GdiPlus.lib")
 
 #ifndef GDIPVER
 #define GDIPVER 0x0100

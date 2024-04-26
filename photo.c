@@ -291,9 +291,11 @@ update:
     }
 }
 
+typedef int ( __cdecl *cmpfunc_t)(const void *elem1, const void *elem2, void *data);
+
 typedef struct {
-    __cmpfunc_s *asc;
-    __cmpfunc_s *desc;
+    cmpfunc_t asc;
+    cmpfunc_t desc;
 } CMP;
 
 static int __cdecl AscFilename(const PHOTO **, const PHOTO **, void *);
@@ -310,12 +312,12 @@ static int __cdecl AscFilenameTime(const PHOTO **, const PHOTO **, void *);
 static int __cdecl DescFilenameTime(const PHOTO **, const PHOTO **, void *);
 
 static CMP cmps[] = {
-    {AscFilename, DescFilename},
-    {AscSubDirectory, DescSubDirectory},
-    {AscSize, DescSize},
-    {AscFileTime, DescFileTime},
-    {AscExifTime, DescExifTime},
-    {AscFilenameTime, DescFilenameTime},
+    {(cmpfunc_t)AscFilename, (cmpfunc_t)DescFilename},
+    {(cmpfunc_t)AscSubDirectory, (cmpfunc_t)DescSubDirectory},
+    {(cmpfunc_t)AscSize, (cmpfunc_t)DescSize},
+    {(cmpfunc_t)AscFileTime, (cmpfunc_t)DescFileTime},
+    {(cmpfunc_t)AscExifTime, (cmpfunc_t)DescExifTime},
+    {(cmpfunc_t)AscFilenameTime, (cmpfunc_t)DescFilenameTime},
 };
 
 void SortPhotos(int idx, BOOL isAscending)
@@ -323,7 +325,7 @@ void SortPhotos(int idx, BOOL isAscending)
     ASSERT_VOID(gPhotoLib.iCount > 0);
     ASSERT_VOID(gPhotoLib.pPhotos);
     ASSERT_VOID(idx >= 0 && idx < (int)NELEMS(cmps));
-    __cmpfunc_s *cmpfunc = isAscending ? cmps[idx].asc : cmps[idx].desc;
+    cmpfunc_t cmpfunc = isAscending ? cmps[idx].asc : cmps[idx].desc;
     (void)qsort_s(gPhotoLib.pPhotos, gPhotoLib.iCount, sizeof(PHOTO *), cmpfunc, NULL);
 }
 
