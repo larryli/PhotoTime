@@ -41,7 +41,7 @@ HWND CreateStatusBarWnd(HWND hWndParent, HINSTANCE hInst, TCHAR *szText, TCHAR *
     if (hWndSysLink)
         SetWindowLongPtr(hWndStatusBar, GWLP_USERDATA, (LONG_PTR)hWndSysLink);
     SIZE size;
-    if (GetTextExtentPoint32(GetDC(hWndSysLink), szUrl, wcslen(szUrl), &size))
+    if (GetTextExtentPoint32(GetDC(hWndSysLink), szUrl, (int)wcslen(szUrl), &size))
         scxSysLink = size.cx + 18;
     SizeStatusPanels(hWndParent, hWndStatusBar);
     return hWndStatusBar;

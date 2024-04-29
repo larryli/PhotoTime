@@ -291,12 +291,26 @@ update:
     }
 }
 
-typedef int ( __cdecl *cmpfunc_t)(const void *elem1, const void *elem2, void *data);
+#ifdef _MSC_VER
 
-typedef struct {
-    cmpfunc_t asc;
-    cmpfunc_t desc;
-} CMP;
+typedef int (__cdecl *cmpfunc_t)(void *data, const void *elem1, const void *elem2);
+
+static int __cdecl AscFilename(void *, const PHOTO **, const PHOTO **);
+static int __cdecl DescFilename(void *, const PHOTO **, const PHOTO **);
+static int __cdecl AscSubDirectory(void *, const PHOTO **, const PHOTO **);
+static int __cdecl DescSubDirectory(void *, const PHOTO **, const PHOTO **);
+static int __cdecl AscSize(void *, const PHOTO **, const PHOTO **);
+static int __cdecl DescSize(void *, const PHOTO **, const PHOTO **);
+static int __cdecl AscFileTime(void *, const PHOTO **, const PHOTO **);
+static int __cdecl DescFileTime(void *, const PHOTO **, const PHOTO **);
+static int __cdecl AscExifTime(void *, const PHOTO **, const PHOTO **);
+static int __cdecl DescExifTime(void *, const PHOTO **, const PHOTO **);
+static int __cdecl AscFilenameTime(void *, const PHOTO **, const PHOTO **);
+static int __cdecl DescFilenameTime(void *, const PHOTO **, const PHOTO **);
+
+#else
+
+typedef int (__cdecl *cmpfunc_t)(const void *elem1, const void *elem2, void *data);
 
 static int __cdecl AscFilename(const PHOTO **, const PHOTO **, void *);
 static int __cdecl DescFilename(const PHOTO **, const PHOTO **, void *);
@@ -310,6 +324,13 @@ static int __cdecl AscExifTime(const PHOTO **, const PHOTO **, void *);
 static int __cdecl DescExifTime(const PHOTO **, const PHOTO **, void *);
 static int __cdecl AscFilenameTime(const PHOTO **, const PHOTO **, void *);
 static int __cdecl DescFilenameTime(const PHOTO **, const PHOTO **, void *);
+
+#endif
+
+typedef struct {
+    cmpfunc_t asc;
+    cmpfunc_t desc;
+} CMP;
 
 static CMP cmps[] = {
     {(cmpfunc_t)AscFilename, (cmpfunc_t)DescFilename},
@@ -454,17 +475,32 @@ static BOOL FindFile(HANDLE *phFind, WIN32_FIND_DATA *pWfd, LPCTSTR szPath)
     return FALSE;
 }
 
+#ifdef _MSC_VER
+static int __cdecl AscFilename(void *d, const PHOTO **a, const PHOTO **b)
+#else
 static int __cdecl AscFilename(const PHOTO **a, const PHOTO **b, void *d)
+#endif
 {
     return _wcsicmp((*a)->szFilename, (*b)->szFilename);
 }
 
+#ifdef _MSC_VER
+static int __cdecl DescFilename(void *d, const PHOTO **a, const PHOTO **b)
+{
+    return AscFilename(d, b, a);
+}
+#else
 static int __cdecl DescFilename(const PHOTO **a, const PHOTO **b, void *d)
 {
     return AscFilename(b, a, d);
 }
+#endif
 
+#ifdef _MSC_VER
+static int __cdecl AscSubDirectory(void *d, const PHOTO **a, const PHOTO **b)
+#else
 static int __cdecl AscSubDirectory(const PHOTO **a, const PHOTO **b, void *d)
+#endif
 {
     if ((*a)->szSubPath == NULL) {
         if ((*b)->szSubPath == NULL)
@@ -475,12 +511,23 @@ static int __cdecl AscSubDirectory(const PHOTO **a, const PHOTO **b, void *d)
     return _wcsicmp((*a)->szSubPath, (*b)->szSubPath);
 }
 
+#ifdef _MSC_VER
+static int __cdecl DescSubDirectory(void *d, const PHOTO **a, const PHOTO **b)
+{
+    return AscSubDirectory(d, b, a);
+}
+#else
 static int __cdecl DescSubDirectory(const PHOTO **a, const PHOTO **b, void *d)
 {
     return AscSubDirectory(b, a, d);
 }
+#endif
 
+#ifdef _MSC_VER
+static int __cdecl AscSize(void *d, const PHOTO **a, const PHOTO **b)
+#else
 static int __cdecl AscSize(const PHOTO **a, const PHOTO **b, void *d)
+#endif
 {
     if ((*a)->filesize.QuadPart > (*b)->filesize.QuadPart)
         return 1;
@@ -489,10 +536,17 @@ static int __cdecl AscSize(const PHOTO **a, const PHOTO **b, void *d)
     return -1;
 }
 
+#ifdef _MSC_VER
+static int __cdecl DescSize(void *d, const PHOTO **a, const PHOTO **b)
+{
+    return AscSize(d, b, a);
+}
+#else
 static int __cdecl DescSize(const PHOTO **a, const PHOTO **b, void *d)
 {
     return AscSize(b, a, d);
 }
+#endif
 
 static int CompareSystemTime(const PSYSTEMTIME pStA, const PSYSTEMTIME pStB)
 {
@@ -512,32 +566,56 @@ static int CompareSystemTime(const PSYSTEMTIME pStA, const PSYSTEMTIME pStB)
     return 0;
 }
 
+#ifdef _MSC_VER
+static int __cdecl AscFileTime(void *d, const PHOTO **a, const PHOTO **b)
+#else
 static int __cdecl AscFileTime(const PHOTO **a, const PHOTO **b, void *d)
+#endif
 {
     return CompareSystemTime((*a)->pStFileTime, (*b)->pStFileTime);
 }
 
+#ifdef _MSC_VER
+static int __cdecl DescFileTime(void *d, const PHOTO **a, const PHOTO **b)
+#else
 static int __cdecl DescFileTime(const PHOTO **a, const PHOTO **b, void *d)
+#endif
 {
     return CompareSystemTime((*b)->pStFileTime, (*a)->pStFileTime);
 }
 
+#ifdef _MSC_VER
+static int __cdecl AscExifTime(void *d, const PHOTO **a, const PHOTO **b)
+#else
 static int __cdecl AscExifTime(const PHOTO **a, const PHOTO **b, void *d)
+#endif
 {
     return CompareSystemTime((*a)->pStExifTime, (*b)->pStExifTime);
 }
 
+#ifdef _MSC_VER
+static int __cdecl DescExifTime(void *d, const PHOTO **a, const PHOTO **b)
+#else
 static int __cdecl DescExifTime(const PHOTO **a, const PHOTO **b, void *d)
+#endif
 {
     return CompareSystemTime((*b)->pStExifTime, (*a)->pStExifTime);
 }
 
+#ifdef _MSC_VER
+static int __cdecl AscFilenameTime(void *d, const PHOTO **a, const PHOTO **b)
+#else
 static int __cdecl AscFilenameTime(const PHOTO **a, const PHOTO **b, void *d)
+#endif
 {
     return CompareSystemTime((*a)->pStFilenameTime, (*b)->pStFilenameTime);
 }
 
+#ifdef _MSC_VER
+static int __cdecl DescFilenameTime(void *d, const PHOTO **a, const PHOTO **b)
+#else
 static int __cdecl DescFilenameTime(const PHOTO **a, const PHOTO **b, void *d)
+#endif
 {
     return CompareSystemTime((*b)->pStFilenameTime, (*a)->pStFilenameTime);
 }

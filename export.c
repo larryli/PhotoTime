@@ -69,11 +69,11 @@ BOOL ExportToHtmlFile(HWND hWndLV, PCTSTR szPath, PCTSTR szTitle)
     const char *table = "</h1>\n<table><thead><tr>\n";
     const char *tbody = "</tr></thead><tbody>\n";
     const char *end = "</tbody></table></body></html>\n";
-    ASSERT_END(SaveData(hFile, (void *)head, strlen(head)));
+    ASSERT_END(SaveData(hFile, (void *)head, (DWORD)strlen(head)));
     ASSERT_END(SaveString(hFile, szTitle));
-    ASSERT_END(SaveData(hFile, (void *)body, strlen(body)));
+    ASSERT_END(SaveData(hFile, (void *)body, (DWORD)strlen(body)));
     ASSERT_END(SaveString(hFile, szTitle));
-    ASSERT_END(SaveData(hFile, (void *)table, strlen(table)));
+    ASSERT_END(SaveData(hFile, (void *)table, (DWORD)strlen(table)));
     TCHAR szBuf[MAX_PATH] = L"";
     for (int i = 0; i < LV_ROWS; i++) {
         ListView_GetColumnText(hWndLV, i, szBuf, NELEMS(szBuf));
@@ -81,7 +81,7 @@ BOOL ExportToHtmlFile(HWND hWndLV, PCTSTR szPath, PCTSTR szTitle)
         ASSERT_END(SaveString(hFile, szBuf));
         ASSERT_END(SaveData(hFile, "</th>\n", 6));
     }
-    ASSERT_END(SaveData(hFile, (void *)tbody, strlen(tbody)));
+    ASSERT_END(SaveData(hFile, (void *)tbody, (DWORD)strlen(tbody)));
     int count = ListView_GetItemCount(hWndLV);
     for (int idx = 0; idx < count; idx++) {
         ASSERT_END(SaveData(hFile, "<tr>\n", 5));
@@ -93,7 +93,7 @@ BOOL ExportToHtmlFile(HWND hWndLV, PCTSTR szPath, PCTSTR szTitle)
         }
         ASSERT_END(SaveData(hFile, "</tr>\n", 6));
     }
-    ASSERT_END(SaveData(hFile, (void *)end, strlen(end)));
+    ASSERT_END(SaveData(hFile, (void *)end, (DWORD)strlen(end)));
     bRet = TRUE;
 end:
     CloseHandle(hFile);

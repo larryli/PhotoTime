@@ -60,5 +60,8 @@ dkms.conf
 output/
 parsest/
 
+# VSCode
 .vscode/
+
+# CMake
 build/

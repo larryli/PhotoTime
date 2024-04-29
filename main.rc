@@ -15,7 +15,7 @@ IDR_BMP_UP BITMAP "up.bmp"
 
 IDR_BMP_DOWN BITMAP "down.bmp"
 
-1 MANIFEST "res1.xml"
+1 RT_MANIFEST "res1.xml"
 
 LANGUAGE LANG_CHINESE_SIMPLIFIED,SUBLANG_CHINESE_SIMPLIFIED
 
@@ -28,7 +28,7 @@ FONT 8, "MS Shell Dlg", 0, 0, 1
   CONTROL IDR_ICO_MAIN, -1, "Static", SS_ICON|SS_CENTERIMAGE, 5, 10, 26, 26
   CONTROL "PhotoTime v1.0", IDD_APPNAME, "Static", WS_GROUP, 40, 10, 150, 10
   CONTROL "Copyright(C) Larry Li", IDD_COPYRIGHT, "Static", WS_GROUP, 40, 22, 150, 10
-  CONTROL "<a href=\"https://github.com/larryli/PhotoTime\">https://github.com/larryli/PhotoTime</a>", IDD_WEBSITE, "SysLink", WS_TABSTOP, 40, 34, 150, 10
+  CONTROL "<a href=""https://github.com/larryli/PhotoTime"">https://github.com/larryli/PhotoTime</a>", IDD_WEBSITE, "SysLink", WS_TABSTOP, 40, 34, 150, 10
 }
 
 IDR_MNU_MAIN MENUEX
@@ -82,8 +82,8 @@ IDR_MNU_AUTOPROC MENUEX
 }
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 1,0,2,1
-PRODUCTVERSION 1,0,2,1
+FILEVERSION 1,0,2,2
+PRODUCTVERSION 1,0,2,2
 FILEFLAGSMASK 0x3F
 FILEFLAGS 0x0
 FILEOS VOS__WINDOWS32
@@ -96,10 +96,10 @@ FILESUBTYPE VFT2_UNKNOWN
     {
       VALUE "Comments", "https://github.com/larryli/PhotoTime\0"
       VALUE "FileDescription", "照片时间修改器\0"
-      VALUE "FileVersion", "1.0.2.1\0"
+      VALUE "FileVersion", "1.0.2.2\0"
       VALUE "LegalCopyright", "Larry Li\0"
       VALUE "ProductName", "PhotoTime\0"
-      VALUE "ProductVersion", "1.0.2.1\0"
+      VALUE "ProductVersion", "1.0.2.2\0"
     }
   }
   BLOCK "VarFileInfo"
@@ -119,7 +119,7 @@ FONT 8, "MS Shell Dlg", 0, 0, 1
   CONTROL IDR_ICO_MAIN, -1, "Static", SS_ICON|SS_CENTERIMAGE, 5, 10, 26, 26
   CONTROL "PhotoTime v1.0", IDD_APPNAME, "Static", WS_GROUP, 40, 10, 150, 10
   CONTROL "Copyright(C) Larry Li", IDD_COPYRIGHT, "Static", WS_GROUP, 40, 22, 150, 10
-  CONTROL "<a href=\"https://github.com/larryli/PhotoTime\">https://github.com/larryli/PhotoTime</a>", IDD_WEBSITE, "SysLink", WS_TABSTOP, 40, 34, 150, 10
+  CONTROL "<a href=""https://github.com/larryli/PhotoTime"">https://github.com/larryli/PhotoTime</a>", IDD_WEBSITE, "SysLink", WS_TABSTOP, 40, 34, 150, 10
 }
 
 IDR_MNU_MAIN MENUEX
@@ -173,8 +173,8 @@ IDR_MNU_AUTOPROC MENUEX
 }
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 1,0,2,1
-PRODUCTVERSION 1,0,2,1
+FILEVERSION 1,0,2,2
+PRODUCTVERSION 1,0,2,2
 FILEFLAGSMASK 0x3F
 FILEFLAGS 0x0
 FILEOS VOS__WINDOWS32
@@ -187,10 +187,10 @@ FILESUBTYPE VFT2_UNKNOWN
     {
       VALUE "Comments", "https://github.com/larryli/PhotoTime\0"
       VALUE "FileDescription", "PhotoTime Modifier\0"
-      VALUE "FileVersion", "1.0.2.1\0"
+      VALUE "FileVersion", "1.0.2.2\0"
       VALUE "LegalCopyright", "Larry Li\0"
       VALUE "ProductName", "PhotoTime\0"
-      VALUE "ProductVersion", "1.0.2.1\0"
+      VALUE "ProductVersion", "1.0.2.2\0"
     }
   }
   BLOCK "VarFileInfo"
@@ -257,7 +257,26 @@ STRINGTABLE
   IDS_FILENAME_DATETIME, "Filename datetime"
   IDS_LINK, "https://github.com/larryli/PhotoTime"
   IDS_SELECT_PHOTO_DIRECTORY, "Select the photo directory"
-  IDS_OPENDIR_START, "Finding the photos in the folder..."
-  IDS_OPENDIR_RUN, "Finding the photos in the folder, found %d photo(s)..."
+  IDS_OPENDIR_START, "Finding the photos..."
+  IDS_OPENDIR_RUN, "Finding the photos, found %d photo(s)..."
 }
 
+STRINGTABLE
+{
+  IDS_OPENDIR_FAILED, "Failed to find photos, %d found"
+  IDS_DONE, "Total of %d photo(s)"
+  IDS_SELECTED, "Total of %d photo(s), %d selected"
+  IDS_LOAD_PHOTO_FAILED, "Failed to load photo!"
+  IDS_SHOW_PHOTO_FAILED, "Failed to show photo."
+  IDS_RELOAD, "Reload"
+  IDS_RELOAD_START, "Reloading photos, total of %d photo(s)..."
+  IDS_RELOAD_RUN, "Reloading, total of %d photo(s), %d reload..."
+  IDS_AUTOPROC, "Autoprocess"
+  IDS_SORT_START, "Sorting, total of %d photo(s)..."
+  IDS_TSV_FILE, "TSV File (*.tsv)\0*.tsv\0"
+  IDS_HTML_FILE, "HTML File (*.html; *.htm)\0*.html;*.htm\0"
+  IDS_SAVE_FILE_FAILED, "Cannot save the file!"
+  IDS_EXPORT_START, "Exporting..."
+  IDS_AUTOPROC_START, "Autoprocessing, total of %d photo(s)..."
+  IDS_AUTOPROC_RUN, "Autoprocessing, total of %d photo(s), %d done..."
+}

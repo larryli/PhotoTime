@@ -15,6 +15,13 @@
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "uuid.lib")
 
+#ifndef HANDLE_WM_DROPFILES
+#define HANDLE_WM_DROPFILES(hwnd,wParam,lParam,fn)  ((fn)((hwnd),(HDROP)(wParam)),0)
+#endif
+#ifndef ToolBar_EnableButton
+#define ToolBar_EnableButton(hwnd,idButton,fEnable)  (BOOL)SNDMSG((hwnd),TB_ENABLEBUTTON,(WPARAM)(idButton),(LPARAM)MAKELONG(fEnable,0))
+#endif
+
 #define __STDC_WANT_LIB_EXT1__ 1
 #include <tchar.h>
 
@@ -52,7 +59,7 @@ static LRESULT Main_OnNotify(HWND, int, NMHDR *);
 static void Main_OnCommand(HWND, int, HWND, UINT);
 static void Main_OnContextMenu(HWND, HWND, UINT, UINT);
 static void Main_OnDestroy(HWND);
-static void Main_OnTimer(HWND, UINT);
+static void Main_OnTimer(HWND, UINT_PTR);
 static void Main_OnDropFiles(HWND, HDROP);
 
 static void Main_OnSortStart(HWND, int, BOOL);
@@ -114,7 +121,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pszCmdL
     }
 #endif
     DeinitGdip();
-    return msg.wParam;
+    return (int)msg.wParam;
 }
 
 static BOOL InitApplication(HINSTANCE hInstance)
@@ -414,10 +421,14 @@ static void __cdecl ReloadThread(PVOID pVoid)
 static void __cdecl AutoProcThread(PVOID pVoid)
 {
     TRAVERSE_THREAD_PARAMS *pParams = (TRAVERSE_THREAD_PARAMS *)pVoid;
+#ifdef __POCC__
 #pragma warn(push)
 #pragma warn(disable: 2215)
+#endif
     AutoProcPhotos(pParams->done, (AUTOPROCTYPE)(pParams->pVoid));
+#ifdef __POCC__
 #pragma warn(pop)
+#endif
     SendMessage(pParams->hWnd, WM_RELOAD_DONE, 0, 0);
     GlobalFree(pVoid);
     _endthread();
@@ -506,7 +517,7 @@ static void ShellProperties(HWND hwnd)
 static void CopyToClip(HWND hwnd, const PTSTR szBuf)
 {
     ASSERT_VOID(OpenClipboard(hwnd));
-    int size = (lstrlen(szBuf) + 1) * sizeof(TCHAR);
+    size_t size = (lstrlen(szBuf) + 1) * sizeof(TCHAR);
     HGLOBAL h = GlobalAlloc(GMEM_MOVEABLE, size);
     ASSERT_END(h);
     PTSTR p = GlobalLock(h);
@@ -712,7 +723,7 @@ static LRESULT Main_OnNotify(HWND hwnd, int wParam, NMHDR *lParam)
     return 0;
 }
 
-static void Main_OnTimer(HWND hwnd, UINT id)
+static void Main_OnTimer(HWND hwnd, UINT_PTR id)
 {
     ASSERT_VOID(gPhotoLib.iCount > 0);
     if (id == ID_TIMER_OPENDIR) {
