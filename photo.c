@@ -291,7 +291,7 @@ update:
     }
 }
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__POCC__)
 
 typedef int (__cdecl *cmpfunc_t)(void *data, const void *elem1, const void *elem2);
 
@@ -475,7 +475,7 @@ static BOOL FindFile(HANDLE *phFind, WIN32_FIND_DATA *pWfd, LPCTSTR szPath)
     return FALSE;
 }
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__POCC__)
 static int __cdecl AscFilename(void *d, const PHOTO **a, const PHOTO **b)
 #else
 static int __cdecl AscFilename(const PHOTO **a, const PHOTO **b, void *d)
@@ -484,7 +484,7 @@ static int __cdecl AscFilename(const PHOTO **a, const PHOTO **b, void *d)
     return _wcsicmp((*a)->szFilename, (*b)->szFilename);
 }
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__POCC__)
 static int __cdecl DescFilename(void *d, const PHOTO **a, const PHOTO **b)
 {
     return AscFilename(d, b, a);
@@ -496,7 +496,7 @@ static int __cdecl DescFilename(const PHOTO **a, const PHOTO **b, void *d)
 }
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__POCC__)
 static int __cdecl AscSubDirectory(void *d, const PHOTO **a, const PHOTO **b)
 #else
 static int __cdecl AscSubDirectory(const PHOTO **a, const PHOTO **b, void *d)
@@ -511,7 +511,7 @@ static int __cdecl AscSubDirectory(const PHOTO **a, const PHOTO **b, void *d)
     return _wcsicmp((*a)->szSubPath, (*b)->szSubPath);
 }
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__POCC__)
 static int __cdecl DescSubDirectory(void *d, const PHOTO **a, const PHOTO **b)
 {
     return AscSubDirectory(d, b, a);
@@ -523,7 +523,7 @@ static int __cdecl DescSubDirectory(const PHOTO **a, const PHOTO **b, void *d)
 }
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__POCC__)
 static int __cdecl AscSize(void *d, const PHOTO **a, const PHOTO **b)
 #else
 static int __cdecl AscSize(const PHOTO **a, const PHOTO **b, void *d)
@@ -536,7 +536,7 @@ static int __cdecl AscSize(const PHOTO **a, const PHOTO **b, void *d)
     return -1;
 }
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__POCC__)
 static int __cdecl DescSize(void *d, const PHOTO **a, const PHOTO **b)
 {
     return AscSize(d, b, a);
@@ -566,7 +566,7 @@ static int CompareSystemTime(const PSYSTEMTIME pStA, const PSYSTEMTIME pStB)
     return 0;
 }
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__POCC__)
 static int __cdecl AscFileTime(void *d, const PHOTO **a, const PHOTO **b)
 #else
 static int __cdecl AscFileTime(const PHOTO **a, const PHOTO **b, void *d)
@@ -575,7 +575,7 @@ static int __cdecl AscFileTime(const PHOTO **a, const PHOTO **b, void *d)
     return CompareSystemTime((*a)->pStFileTime, (*b)->pStFileTime);
 }
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__POCC__)
 static int __cdecl DescFileTime(void *d, const PHOTO **a, const PHOTO **b)
 #else
 static int __cdecl DescFileTime(const PHOTO **a, const PHOTO **b, void *d)
@@ -584,7 +584,7 @@ static int __cdecl DescFileTime(const PHOTO **a, const PHOTO **b, void *d)
     return CompareSystemTime((*b)->pStFileTime, (*a)->pStFileTime);
 }
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__POCC__)
 static int __cdecl AscExifTime(void *d, const PHOTO **a, const PHOTO **b)
 #else
 static int __cdecl AscExifTime(const PHOTO **a, const PHOTO **b, void *d)
@@ -593,7 +593,7 @@ static int __cdecl AscExifTime(const PHOTO **a, const PHOTO **b, void *d)
     return CompareSystemTime((*a)->pStExifTime, (*b)->pStExifTime);
 }
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__POCC__)
 static int __cdecl DescExifTime(void *d, const PHOTO **a, const PHOTO **b)
 #else
 static int __cdecl DescExifTime(const PHOTO **a, const PHOTO **b, void *d)
@@ -602,7 +602,7 @@ static int __cdecl DescExifTime(const PHOTO **a, const PHOTO **b, void *d)
     return CompareSystemTime((*b)->pStExifTime, (*a)->pStExifTime);
 }
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__POCC__)
 static int __cdecl AscFilenameTime(void *d, const PHOTO **a, const PHOTO **b)
 #else
 static int __cdecl AscFilenameTime(const PHOTO **a, const PHOTO **b, void *d)
@@ -611,7 +611,7 @@ static int __cdecl AscFilenameTime(const PHOTO **a, const PHOTO **b, void *d)
     return CompareSystemTime((*a)->pStFilenameTime, (*b)->pStFilenameTime);
 }
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__POCC__)
 static int __cdecl DescFilenameTime(void *d, const PHOTO **a, const PHOTO **b)
 #else
 static int __cdecl DescFilenameTime(const PHOTO **a, const PHOTO **b, void *d)

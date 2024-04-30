@@ -32,7 +32,7 @@ PhotoTime.exe: \
 	output\commctrls.obj \
 	output\export.obj \
 	output\gdip.obj \
-	output\listvisw.obj \
+	output\listview.obj \
 	output\main.obj \
 	output\main.res \
 	output\parsest.obj \
@@ -83,10 +83,10 @@ output\gdip.obj: \
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
-# Build listvisw.obj.
+# Build listview.obj.
 # 
-output\listvisw.obj: \
-	listvisw.c \
+output\listview.obj: \
+	listview.c \
 	commctrls.h \
 	listview.h \
 	main.h \
@@ -184,6 +184,6 @@ output\utils.obj: \
 	utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
-.SILENT:
-
 .EXCLUDEDFILES:
+
+.SILENT:
