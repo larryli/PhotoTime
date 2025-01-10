@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.8)
+project(PhotoTime VERSION 0.1.0 LANGUAGES C)
 
-project("PhotoTime")
+if(MSVC)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MANIFEST:NO")
+    add_definitions(/MT /O2)
+endif()
 
 add_definitions(-DUNICODE -D_UNICODE)
-
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MANIFEST:NO")
-
 add_executable(PhotoTime WIN32
     "about.c"
     "commctrls.c"
@@ -20,11 +21,9 @@ add_executable(PhotoTime WIN32
     "statusbar.c"
     "toolbar.c"
     "utils.c")
-
-target_link_libraries(PhotoTime comctl32.lib comdlg32.lib advapi32.lib)
+target_link_libraries(PhotoTime comctl32 comdlg32 advapi32)
 
 add_definitions(-DTEST_PARSEST)
-
 add_executable(parsest
     "parsest.c"
     "utils.c")
