@@ -1,8 +1,10 @@
+[English](README.md) | [中文](README_zh.md)
+
 # 🖼 ️PhotoTime 照片时间修改器
 
 [JpgTime](http://www.muralpix.com/jpgtime/) 功能增强。
 
-开发工具：[Pelles C 12.00](http://www.smorgasbordet.com/pellesc/)
+开发工具：[Pelles C 13.01](http://www.smorgasbordet.com/pellesc/)
 
 ## 功能
 

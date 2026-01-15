@@ -15,6 +15,14 @@
 
 #include "main.h"
 
+/**
+ * @brief Initialize the About dialog
+ *
+ * This function initializes the About dialog by retrieving version information
+ * from the executable and setting the appropriate text fields in the dialog.
+ *
+ * @param hwnd Handle to the dialog window
+ */
 static void InitDialog(HWND hwnd)
 {
     TCHAR szPath[MAX_PATH];
@@ -24,13 +32,13 @@ static void InitDialog(HWND hwnd)
     void *pInfo = GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, size);
     ASSERT_VOID(pInfo);
     ASSERT_END(GetFileVersionInfo(szPath, dwInfo, size, pInfo));
-    void far *ptr;
+    void *ptr;
     ASSERT_END(VerQueryValue(pInfo, L"\\VarFileInfo\\Translation", &ptr, &size));
-    WORD far *pLang = (WORD far *)ptr;
+    WORD *pLang = (WORD *)ptr;
     TCHAR szBuf[MAX_PATH];
     swprintf(szBuf, NELEMS(szBuf), L"\\StringFileInfo\\%04X%04X\\%ls", *pLang, *(pLang + 1), L"ProductName");
     if (VerQueryValue(pInfo, szBuf, &ptr, &size)) {
-        void far *ptr2;
+        void *ptr2;
         swprintf(szBuf, NELEMS(szBuf), L"\\StringFileInfo\\%04X%04X\\%ls", *pLang, *(pLang + 1), L"ProductVersion");
         if (VerQueryValue(pInfo, szBuf, &ptr2, &size)) {
             swprintf(szBuf, NELEMS(szBuf), L"%ls v%ls", (LPTSTR)ptr, (LPTSTR)ptr2);
@@ -51,6 +59,18 @@ end:
     GlobalFree(pInfo);
 }
 
+/**
+ * @brief Dialog procedure for the About dialog
+ *
+ * This function handles messages sent to the About dialog box, including initialization,
+ * command handling (OK/Cancel), and hyperlink clicks.
+ *
+ * @param hDlg Handle to the dialog box window
+ * @param uMsg Specifies the message
+ * @param wParam Additional message-specific information
+ * @param lParam Additional message-specific information
+ * @return The return value depends on the message
+ */
 LRESULT CALLBACK AboutDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg) {

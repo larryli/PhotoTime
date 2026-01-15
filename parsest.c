@@ -17,6 +17,18 @@ typedef enum {
 
 #define is_sep(c) ((c) == L' ' || (c) == L'.' || (c) == L'_' || (c) == L'-')
 
+/**
+ * @brief Convert a string segment to a WORD value based on its state (year, month, etc.)
+ *
+ * This function converts a substring to a WORD value and validates it according to the expected range
+ * for the given state (year, month, day, hour, minute, or second).
+ *
+ * @param szStr Pointer to the string segment to convert
+ * @param len Length of the string segment
+ * @param state The expected time component (STATE_YEAR, STATE_MON, etc.)
+ * @param pW Pointer to store the converted WORD value
+ * @return TRUE if conversion and validation are successful, FALSE otherwise
+ */
 static BOOL ToWord(LPCTSTR szStr, int len, STATE state, PWORD pW)
 {
     TCHAR szBuf[5];
@@ -52,6 +64,16 @@ ok:
     return TRUE;
 }
 
+/**
+ * @brief Convert a timestamp string to a SYSTEMTIME structure
+ *
+ * This function converts a Unix timestamp string to a SYSTEMTIME structure by converting
+ * it to a FILETIME first and then to local system time.
+ *
+ * @param szStr Pointer to the timestamp string to convert
+ * @param pSt Pointer to SYSTEMTIME structure to store the converted time
+ * @return TRUE if conversion is successful, FALSE otherwise
+ */
 static BOOL ToSystemTime(LPCTSTR szStr, PSYSTEMTIME pSt)
 {
     TCHAR szBuf[11];
@@ -61,6 +83,15 @@ static BOOL ToSystemTime(LPCTSTR szStr, PSYSTEMTIME pSt)
     return FileTimeToLocalSystemTime((PFILETIME)&ft, pSt);
 }
 
+/**
+ * @brief Validate if the date in the SYSTEMTIME structure is valid
+ *
+ * This function checks if the day value in the SYSTEMTIME structure is valid for the given month and year,
+ * taking leap years into account.
+ *
+ * @param pSt Pointer to SYSTEMTIME structure containing the date to validate
+ * @return TRUE if the date is valid, FALSE otherwise
+ */
 BOOL IsValidDate(PSYSTEMTIME pSt)
 {
     WORD daysInMonth[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
@@ -69,6 +100,17 @@ BOOL IsValidDate(PSYSTEMTIME pSt)
     return pSt->wDay <= daysInMonth[pSt->wMonth - 1];
 }
 
+/**
+ * @brief Parse a string to SYSTEMTIME structure
+ *
+ * This function parses a string representation of a date/time and converts it to a SYSTEMTIME structure.
+ * It supports various date/time formats and returns the parsing result code.
+ *
+ * @param szStr String containing date/time information
+ * @param pSt Pointer to SYSTEMTIME structure to store the parsed time
+ * @param result Pointer to PARSEST_RESULT to store the parsing result code
+ * @return TRUE if parsing was successful, FALSE otherwise
+ */
 BOOL ParseStringToSystemTime(LPCTSTR szStr, PSYSTEMTIME pSt, PARSEST_RESULT *result)
 {
     ZeroMemory(pSt, sizeof(SYSTEMTIME));

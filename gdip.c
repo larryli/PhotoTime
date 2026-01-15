@@ -32,6 +32,12 @@ typedef struct {
 static GUID_TO_CLSID *pGuidToClsid = NULL;
 static UINT uGuidToClsid = 0;
 
+/**
+ * @brief Initialize the GUID to CLSID mapping table
+ *
+ * This function initializes a lookup table that maps image format GUIDs to their corresponding encoder CLSIDs.
+ * This is used when saving images to determine the appropriate encoder to use.
+ */
 static void InitGuidToClsid(void)
 {
     if (pGuidToClsid)
@@ -53,6 +59,11 @@ end:
         GdipFree(pImageCodecInfo);
 }
 
+/**
+ * @brief Deinitialize the GUID to CLSID mapping table
+ *
+ * This function cleans up and frees the memory allocated for the GUID to CLSID mapping table.
+ */
 static void DeinitGuidToClsid(void)
 {
     if (pGuidToClsid) {
@@ -63,6 +74,12 @@ static void DeinitGuidToClsid(void)
         uGuidToClsid = 0;
 }
 
+/**
+ * @brief Initialize GDI+ library
+ *
+ * This function initializes the GDI+ library for image processing operations and sets up
+ * the GUID to CLSID mapping table for image encoders.
+ */
 void InitGdip(void)
 {
     GdiplusStartupInput gdiplusStartupInput = {1, NULL, FALSE, FALSE};
@@ -70,12 +87,26 @@ void InitGdip(void)
     InitGuidToClsid();
 }
 
+/**
+ * @brief Deinitialize GDI+ library
+ *
+ * This function deinitializes and cleans up the GDI+ library resources and cleans up
+ * the GUID to CLSID mapping table.
+ */
 void DeinitGdip(void)
 {
     DeinitGuidToClsid();
     GdiplusShutdown(upToken);
 }
 
+/**
+ * @brief Get the encoder CLSID for an image
+ *
+ * This function determines the appropriate encoder CLSID for the given image based on its format.
+ *
+ * @param image Pointer to the GDI+ image object
+ * @return Pointer to the CLSID of the appropriate encoder, or NULL if not found
+ */
 static CLSID *GetImageEncoderClsid(GpImage *image)
 {
     GUID guid;
@@ -86,6 +117,14 @@ static CLSID *GetImageEncoderClsid(GpImage *image)
     return NULL;
 }
 
+/**
+ * @brief Load an image file using GDI+
+ *
+ * This function loads an image file using GDI+ through a COM stream interface.
+ *
+ * @param szFilePath Path to the image file to load
+ * @return Pointer to the loaded GDI+ image object, or NULL on failure
+ */
 static GpImage *GdipLoadImageFile(LPCTSTR szFilePath)
 {
     IStream *stream;
@@ -97,6 +136,15 @@ static GpImage *GdipLoadImageFile(LPCTSTR szFilePath)
     return image;
 }
 
+/**
+ * @brief Save an image to a file using GDI+
+ *
+ * This function saves a GDI+ image object to a file using the appropriate encoder.
+ *
+ * @param image Pointer to the GDI+ image object to save
+ * @param szFilePath Path to the output file
+ * @return TRUE if the save operation was successful, FALSE otherwise
+ */
 static BOOL GdipSaveImageFile(GpImage *image, LPCTSTR szFilePath)
 {
     CLSID *clsid = GetImageEncoderClsid(image);
@@ -118,6 +166,15 @@ static RotateFlipType rfts[] = {
     Rotate270FlipNone,  // PropertyTagRotate90FlipNone
 };
 
+/**
+ * @brief Get the rotation value from an image's EXIF orientation property
+ *
+ * This function retrieves the orientation value from the image's EXIF data and converts it
+ * to a rotation index that can be used with GDI+ rotation functions.
+ *
+ * @param image Pointer to the GDI+ image object
+ * @return The rotation index based on the EXIF orientation property, or -1 if not found
+ */
 static int GetImageRotaion(GpImage *image)
 {
     UINT size = 0;
@@ -133,6 +190,15 @@ end:
     return iRet;
 }
 
+/**
+ * @brief Load an image using GDI+ and apply rotation based on EXIF data
+ *
+ * This function loads an image file using GDI+ and automatically applies rotation
+ * based on the image's EXIF orientation data.
+ *
+ * @param szFilePath Path to the image file to load
+ * @return Pointer to the loaded GDI+ image object, or NULL on failure
+ */
 void *GdipLoadImage(LPCTSTR szFilePath)
 {
     GpImage *image = GdipLoadImageFile(szFilePath);
@@ -145,6 +211,15 @@ void *GdipLoadImage(LPCTSTR szFilePath)
 
 BOOL IsValidDate(PSYSTEMTIME pSt);
 
+/**
+ * @brief Get system time from image tag
+ *
+ * This function extracts the system time from the EXIF DateTime tag of an image file.
+ *
+ * @param szFilePath Path to the image file
+ * @param pSt Pointer to SYSTEMTIME structure to store the extracted time
+ * @return TRUE if successful, FALSE otherwise
+ */
 BOOL GdipGetTagSystemTime(LPCTSTR szFilePath, PSYSTEMTIME pSt)
 {
     GpImage *image = GdipLoadImageFile(szFilePath);
@@ -175,6 +250,13 @@ end:
     return bRet;
 }
 
+/**
+ * @brief Destroy image data
+ *
+ * This function destroys and frees the memory associated with a GDI+ image object.
+ *
+ * @param data Pointer to the GDI+ image object to destroy
+ */
 void GdipDestoryImage(void *data)
 {
     GpImage *image = (GpImage *)data;
@@ -182,6 +264,17 @@ void GdipDestoryImage(void *data)
     GdipDisposeImage(image);
 }
 
+/**
+ * @brief Draw an image using GDI+
+ *
+ * This function draws a GDI+ image onto a device context within the specified rectangle,
+ * scaling the image to fit while maintaining aspect ratio.
+ *
+ * @param data Pointer to the GDI+ image object to draw
+ * @param hdc Device context to draw on
+ * @param rc Rectangle defining where to draw the image
+ * @return TRUE if successful, FALSE otherwise
+ */
 BOOL GdipDrawImage(void *data, HDC hdc, const RECT * rc)
 {
     GpImage *image = (GpImage *)data;
@@ -230,6 +323,15 @@ end:
     return bRet;
 }
 
+/**
+ * @brief Save image with system time tag
+ *
+ * This function saves an image file with the specified system time embedded in its EXIF DateTime tag.
+ *
+ * @param szFilePath Path to the output image file
+ * @param pSt Pointer to SYSTEMTIME structure containing the time to embed
+ * @return TRUE if successful, FALSE otherwise
+ */
 BOOL GdipSaveImageWithTagSystemTime(LPCTSTR szFilePath, const PSYSTEMTIME pSt)
 {
     BOOL bRet = FALSE;
@@ -251,6 +353,15 @@ end:
     return bRet;
 }
 
+/**
+ * @brief Get image size
+ *
+ * This function retrieves the dimensions of a GDI+ image object.
+ *
+ * @param data Pointer to the GDI+ image object
+ * @param size Pointer to SIZE structure to store the image dimensions
+ * @return TRUE if successful, FALSE otherwise
+ */
 BOOL GdipGetSize(void *data, SIZE *size)
 {
     GpImage *image = (GpImage *)data;

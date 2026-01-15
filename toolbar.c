@@ -7,6 +7,15 @@
 
 #include "main.h"
 
+/**
+ * @brief Create a toolbar window
+ *
+ * This function creates a toolbar control as a child window with buttons and bitmaps.
+ *
+ * @param hWndParent Handle to the parent window
+ * @param hInst Instance handle of the application
+ * @return Handle to the created toolbar window
+ */
 HWND CreateToolBarWnd(HWND hWndParent, HINSTANCE hInst)
 {
     HWND hWndTB = CreateWindowEx(WS_EX_CLIENTEDGE,
@@ -41,6 +50,14 @@ HWND CreateToolBarWnd(HWND hWndParent, HINSTANCE hInst)
     return hWndTB;
 }
 
+/**
+ * @brief Handle tooltip text for toolbar buttons
+ *
+ * This function handles the TTN_NEEDTEXT notification to provide tooltip text for toolbar buttons.
+ *
+ * @param hWndParent Handle to the parent window
+ * @param lpttt Pointer to TOOLTIPTEXT structure to fill with tooltip information
+ */
 void ToolBarNeedText(HWND hWndParent, LPTOOLTIPTEXT lpttt)
 {
     switch (lpttt->hdr.idFrom) {

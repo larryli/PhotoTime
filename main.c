@@ -72,21 +72,47 @@ static BOOL ShowPhoto(int);
 static void Lock(HWND);
 static void UnLock(HWND);
 
+// Global application instance handle
 static HANDLE ghInstance;
-static HCURSOR ghCurSizeEW, ghCurArrow;
-static HWND ghWndToolBar, ghWndListView, ghWndPhotoView, ghWndStatusBar;
-static RECT gRcClient;
-static BOOL bSplitDrag = FALSE;
-static BOOL bLock = FALSE;
 
+// Cursor handles for different mouse interactions
+static HCURSOR ghCurSizeEW, ghCurArrow;
+
+// Window handles for main UI components
+static HWND ghWndToolBar, ghWndListView, ghWndPhotoView, ghWndStatusBar;
+
+// Rectangle storing the client area dimensions
+static RECT gRcClient;
+
+// Flags for UI interaction states
+static BOOL bSplitDrag = FALSE;  // TRUE when dragging the splitter between list and photo views
+static BOOL bLock = FALSE;       // TRUE when UI is locked during operations
+
+// Minimum widths for UI components
 #define MIN_CX_LISTVIEW 320
 #define MIN_CX_PHOTO 320
-static int cxListView = 0;
-static int cxPhoto = 0;
 
-static int iTraverseStart = 0;
-static int iTraverseEnd = -1;
+// Current widths of UI components
+static int cxListView = 0;  // Current width of the list view
+static int cxPhoto = 0;     // Current width of the photo view
 
+// Variables for tracking progress of background operations
+static int iTraverseStart = 0;  // Starting index for current operation
+static int iTraverseEnd = -1;   // Ending index for current operation (-1 indicates not started)
+
+/**
+ * @brief Entry point for the application
+ *
+ * This function serves as the entry point for the Windows application. It initializes
+ * the application, registers window classes, creates the main window, and enters
+ * the message loop.
+ *
+ * @param hInstance Handle to the current instance of the application
+ * @param hPrevInstance Handle to the previous instance of the application (always NULL)
+ * @param pszCmdLine Command line arguments as a string
+ * @param nCmdShow Specifies how the window should be shown
+ * @return The exit code of the application
+ */
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pszCmdLine, int nCmdShow)
 {
     ghInstance = hInstance;
@@ -124,6 +150,14 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pszCmdL
     return (int)msg.wParam;
 }
 
+/**
+ * @brief Initialize the application window class
+ *
+ * This function registers the main window class with the Windows operating system.
+ *
+ * @param hInstance Handle to the application instance
+ * @return TRUE if the class was registered successfully, FALSE otherwise
+ */
 static BOOL InitApplication(HINSTANCE hInstance)
 {
     WNDCLASSEX wc = {
@@ -144,6 +178,15 @@ static BOOL InitApplication(HINSTANCE hInstance)
     return TRUE;
 }
 
+/**
+ * @brief Initialize the application instance
+ *
+ * This function creates the main application window and shows it.
+ *
+ * @param hInstance Handle to the application instance
+ * @param nCmdShow Specifies how the window should be shown
+ * @return TRUE if the window was created successfully, FALSE otherwise
+ */
 static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     TCHAR szTitle[MAX_PATH] = L"";
@@ -166,6 +209,17 @@ static BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     return TRUE;
 }
 
+/**
+ * @brief Main window procedure
+ *
+ * This function handles messages sent to the main application window.
+ *
+ * @param hwnd Handle to the window
+ * @param msg Specifies the message
+ * @param wParam Additional message-specific information
+ * @param lParam Additional message-specific information
+ * @return The return value depends on the message
+ */
 static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg) {
@@ -195,6 +249,16 @@ static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
     }
 }
 
+/**
+ * @brief Handle the WM_CREATE message
+ *
+ * This function handles the WM_CREATE message by creating the main UI controls:
+ * toolbar, status bar, list view, and photo view windows.
+ *
+ * @param hwnd Handle to the window
+ * @param lParam Pointer to a CREATESTRUCT structure that contains information about the window being created
+ * @return TRUE if successful, FALSE otherwise
+ */
 static LRESULT Main_OnCreate(HWND hwnd, LPCREATESTRUCT lParam)
 {
     ghWndToolBar = CreateToolBarWnd(hwnd, ghInstance);
@@ -213,6 +277,16 @@ static LRESULT Main_OnCreate(HWND hwnd, LPCREATESTRUCT lParam)
     return TRUE;
 }
 
+/**
+ * @brief Get the rectangle coordinates for the main window client area
+ *
+ * This function calculates and returns the rectangle coordinates for the main window's
+ * client area, taking into account the positions of the status bar and toolbar.
+ *
+ * @param hwnd Handle to the window
+ * @param p Pointer to a RECT structure that receives the coordinates
+ * @return TRUE if successful, FALSE otherwise
+ */
 static BOOL GetRect(HWND hwnd, RECT *p)
 {
     RECT rc;
@@ -225,6 +299,18 @@ static BOOL GetRect(HWND hwnd, RECT *p)
     return TRUE;
 }
 
+/**
+ * @brief Handle the WM_SIZE message
+ *
+ * This function handles the WM_SIZE message by resizing the child windows appropriately
+ * when the main window is resized.
+ *
+ * @param hwnd Handle to the window
+ * @param flag Specifies the type of resizing requested
+ * @param x New width of the client area
+ * @param y New height of the client area
+ * @return Always returns 0
+ */
 static LRESULT Main_OnSize(HWND hwnd, int flag, int x, int y)
 {
     SendMessage(ghWndToolBar, WM_SIZE, x, y);
@@ -263,18 +349,52 @@ static LRESULT Main_OnSize(HWND hwnd, int flag, int x, int y)
     return 0;
 }
 
+/**
+ * @brief Handle the WM_LBUTTONDOWN message
+ *
+ * This function handles the WM_LBUTTONDOWN message by capturing mouse input
+ * and setting the split drag flag when the left mouse button is pressed.
+ *
+ * @param hwnd Handle to the window
+ * @param fDoubleClick TRUE if this is a double-click message, FALSE otherwise
+ * @param x X-coordinate of the cursor position
+ * @param y Y-coordinate of the cursor position
+ * @param keyFlags Indicates whether various virtual keys are down
+ */
 static void Main_OnLButtonDown(HWND hwnd, BOOL fDoubleClick, int x, int y, UINT keyFlags)
 {
     SetCapture(hwnd);
     bSplitDrag = TRUE;
 }
 
+/**
+ * @brief Handle the WM_LBUTTONUP message
+ *
+ * This function handles the WM_LBUTTONUP message by releasing mouse capture
+ * and resetting the split drag flag when the left mouse button is released.
+ *
+ * @param hwnd Handle to the window
+ * @param x X-coordinate of the cursor position
+ * @param y Y-coordinate of the cursor position
+ * @param keyFlags Indicates whether various virtual keys are down
+ */
 static void Main_OnLButtonUp(HWND hwnd, int x, int y, UINT keyFlags)
 {
     ReleaseCapture();
     bSplitDrag = FALSE;
 }
 
+/**
+ * @brief Handle the WM_MOUSEMOVE message
+ *
+ * This function handles the WM_MOUSEMOVE message by updating the cursor based on position
+ * and resizing the list view and photo view windows when dragging the splitter bar.
+ *
+ * @param hwnd Handle to the window
+ * @param x X-coordinate of the cursor position
+ * @param y Y-coordinate of the cursor position
+ * @param keyFlags Indicates whether various virtual keys are down
+ */
 static void Main_OnMouseMove(HWND hwnd, int x, int y, UINT keyFlags)
 {
     if (x > cxListView && x <= cxListView + 2 && y >= gRcClient.top && y <= gRcClient.bottom)
@@ -298,6 +418,14 @@ typedef struct {
     TCHAR szPath[MAX_PATH];
 } OPENDIR_THREAD_PARAMS;
 
+/**
+ * @brief Thread function for opening a directory
+ *
+ * This function runs in a separate thread to find photos in a specified directory
+ * and sends a message when the operation is complete.
+ *
+ * @param pVoid Pointer to OPENDIR_THREAD_PARAMS structure containing the window handle and path
+ */
 static void __cdecl OpenDirThread(PVOID pVoid)
 {
     OPENDIR_THREAD_PARAMS *pParams = (OPENDIR_THREAD_PARAMS *)pVoid;
@@ -307,6 +435,15 @@ static void __cdecl OpenDirThread(PVOID pVoid)
     _endthread();
 }
 
+/**
+ * @brief Open a directory and load photos
+ *
+ * This function opens a specified directory, updates the window title, and starts a thread
+ * to find and load photos from the directory.
+ *
+ * @param hwnd Handle to the main window
+ * @param szPath Path to the directory to open
+ */
 static void OpenDir(HWND hwnd, LPTSTR szPath)
 {
     TCHAR szTitle[MAX_PATH];
@@ -335,6 +472,14 @@ static void OpenDir(HWND hwnd, LPTSTR szPath)
     SetTimer(hwnd, ID_TIMER_OPENDIR, TIMER_OPENDIR_ELAPSE, NULL);
 }
 
+/**
+ * @brief Open a directory selection dialog
+ *
+ * This function displays a directory selection dialog allowing the user to choose
+ * a directory containing photos to open in the application.
+ *
+ * @param hwnd Handle to the parent window
+ */
 static void SelectDir(HWND hwnd)
 {
     TCHAR szTitle[MAX_PATH];
@@ -382,6 +527,15 @@ end:
     OpenDir(hwnd, szPath);
 }
 
+/**
+ * @brief Update the status bar text with formatted message
+ *
+ * This function loads a string resource, formats it with variable arguments,
+ * and updates the status bar text with the resulting message.
+ *
+ * @param uId Resource ID of the string format
+ * @param ... Variable arguments for string formatting
+ */
 static void UpdateStatus(UINT uId, ...)
 {
     TCHAR szFmt[MAX_PATH];
@@ -394,12 +548,18 @@ static void UpdateStatus(UINT uId, ...)
     SetStatusBarText(ghWndStatusBar, 0, szBuf);
 }
 
+/**
+ * @brief Update the status bar with the count of photos
+ *
+ * This function updates the status bar text to show either the total number of photos
+ * or the number of selected photos, depending on the current selection state.
+ */
 static void UpdateStatusDone(void)
 {
     int iSelected = ListView_GetSelectedCount(ghWndListView);
     if (iSelected)
         UpdateStatus(IDS_SELECTED, gPhotoLib.iCount, iSelected);
-    else 
+    else
         UpdateStatus(IDS_DONE, gPhotoLib.iCount);
 }
 
@@ -409,6 +569,14 @@ typedef struct {
     PVOID pVoid;
 } TRAVERSE_THREAD_PARAMS;
 
+/**
+ * @brief Thread function for reloading photos
+ *
+ * This function runs in a separate thread to reload photos and sends a message
+ * when the operation is complete.
+ *
+ * @param pVoid Pointer to TRAVERSE_THREAD_PARAMS structure containing the window handle and done flag
+ */
 static void __cdecl ReloadThread(PVOID pVoid)
 {
     TRAVERSE_THREAD_PARAMS *pParams = (TRAVERSE_THREAD_PARAMS *)pVoid;
@@ -418,6 +586,14 @@ static void __cdecl ReloadThread(PVOID pVoid)
     _endthread();
 }
 
+/**
+ * @brief Thread function for automatic photo processing
+ *
+ * This function runs in a separate thread to automatically process photos and sends a message
+ * when the operation is complete.
+ *
+ * @param pVoid Pointer to TRAVERSE_THREAD_PARAMS structure containing the window handle and processing type
+ */
 static void __cdecl AutoProcThread(PVOID pVoid)
 {
     TRAVERSE_THREAD_PARAMS *pParams = (TRAVERSE_THREAD_PARAMS *)pVoid;
@@ -434,6 +610,19 @@ static void __cdecl AutoProcThread(PVOID pVoid)
     _endthread();
 }
 
+/**
+ * @brief Generic function to traverse photos with a specified thread
+ *
+ * This function allocates parameters, locks the UI, starts a traversal thread,
+ * and sets up a timer to update the UI during the traversal operation.
+ *
+ * @param hwnd Handle to the window
+ * @param thread Pointer to the thread function to execute
+ * @param pVoid Parameter to pass to the thread function
+ * @param uId Resource ID of the status message
+ * @param uTimer Timer identifier
+ * @param uElapse Timer interval in milliseconds
+ */
 static void Traverse(HWND hwnd, void (__cdecl *thread)(PVOID), PVOID pVoid, UINT uId, UINT_PTR uTimer, UINT uElapse)
 {
     ASSERT_VOID(gPhotoLib.iCount > 0);
@@ -452,6 +641,14 @@ static void Traverse(HWND hwnd, void (__cdecl *thread)(PVOID), PVOID pVoid, UINT
     SetTimer(hwnd, uTimer, uElapse, NULL);
 }
 
+/**
+ * @brief Reload the photo library
+ *
+ * This function initiates a reload operation for the photo library by calling the
+ * Traverse function with the ReloadThread.
+ *
+ * @param hwnd Handle to the main window
+ */
 static void Reload(HWND hwnd)
 {
 #ifndef TIMER_RELOAD_ELAPSE
@@ -460,6 +657,15 @@ static void Reload(HWND hwnd)
     Traverse(hwnd, ReloadThread, NULL, IDS_RELOAD_START, ID_TIMER_RELOAD, TIMER_RELOAD_ELAPSE);
 }
 
+/**
+ * @brief Automatically process photos with a specified processing type
+ *
+ * This function initiates an automatic photo processing operation by calling the
+ * Traverse function with the AutoProcThread and specified processing type.
+ *
+ * @param hwnd Handle to the main window
+ * @param type Type of automatic processing to perform
+ */
 static void AutoProc(HWND hwnd, AUTOPROCTYPE type)
 {
 #ifndef TIMER_AUTOPROC_ELAPSE
@@ -468,6 +674,17 @@ static void AutoProc(HWND hwnd, AUTOPROCTYPE type)
     Traverse(hwnd, AutoProcThread, (PVOID)type, IDS_AUTOPROC_START, ID_TIMER_AUTOPROC, TIMER_AUTOPROC_ELAPSE);
 }
 
+/**
+ * @brief Get the full path of a photo by index
+ *
+ * This function constructs the full path of a photo by combining the library path,
+ * sub-path, and filename based on the provided index.
+ *
+ * @param szPath Buffer to receive the constructed path
+ * @param size Size of the buffer
+ * @param idx Index of the photo in the library
+ * @return TRUE if successful, FALSE otherwise
+ */
 static BOOL GetPhotoPath(PTSTR szPath, int size, int idx)
 {
     ASSERT_FALSE(idx >= 0 && idx < gPhotoLib.iCount);
@@ -479,6 +696,14 @@ static BOOL GetPhotoPath(PTSTR szPath, int size, int idx)
     return TRUE;
 }
 
+/**
+ * @brief Open the selected photo with the default application
+ *
+ * This function gets the path of the selected photo and opens it using the default
+ * application associated with its file type.
+ *
+ * @param hwnd Handle to the parent window
+ */
 static void ShellOpen(HWND hwnd)
 {
     TCHAR szPath[MAX_PATH] = L"";
@@ -486,6 +711,14 @@ static void ShellOpen(HWND hwnd)
     ShellExecute(hwnd, NULL, szPath, NULL, NULL, SW_SHOW);
 }
 
+/**
+ * @brief Open the folder containing the selected photo and highlight the file
+ *
+ * This function gets the path of the selected photo and opens its containing folder
+ * with the file highlighted in Windows Explorer.
+ *
+ * @param hwnd Handle to the parent window
+ */
 static void ShellFolder(HWND hwnd)
 {
     TCHAR szPath[MAX_PATH] = L"";
@@ -496,6 +729,14 @@ static void ShellFolder(HWND hwnd)
     ILFree((LPITEMIDLIST)pidlFolder);
 }
 
+/**
+ * @brief Open the properties dialog for the selected photo
+ *
+ * This function gets the path of the selected photo and opens its properties dialog
+ * in Windows Explorer.
+ *
+ * @param hwnd Handle to the parent window
+ */
 static void ShellProperties(HWND hwnd)
 {
     TCHAR szPath[MAX_PATH] = L"";
@@ -514,6 +755,14 @@ static void ShellProperties(HWND hwnd)
     ShellExecuteEx(&shi);
 }
 
+/**
+ * @brief Copy text to the clipboard
+ *
+ * This function copies the specified text to the Windows clipboard.
+ *
+ * @param hwnd Handle to the window
+ * @param szBuf Text to copy to the clipboard
+ */
 static void CopyToClip(HWND hwnd, const PTSTR szBuf)
 {
     ASSERT_VOID(OpenClipboard(hwnd));
@@ -524,11 +773,18 @@ static void CopyToClip(HWND hwnd, const PTSTR szBuf)
     memcpy(p, szBuf, size);
     GlobalUnlock(h);
     EmptyClipboard();
-    SetClipboardData(CF_UNICODETEXT, h); 
+    SetClipboardData(CF_UNICODETEXT, h);
 end:
     CloseClipboard();
 }
 
+/**
+ * @brief Copy the path of the selected photo to the clipboard
+ *
+ * This function gets the path of the selected photo and copies it to the Windows clipboard.
+ *
+ * @param hwnd Handle to the parent window
+ */
 static void CopyPathToClip(HWND hwnd)
 {
     TCHAR szPath[MAX_PATH] = L"";
@@ -536,6 +792,14 @@ static void CopyPathToClip(HWND hwnd)
     CopyToClip(hwnd, szPath);
 }
 
+/**
+ * @brief Copy tab-separated values of the selected photo to the clipboard
+ *
+ * This function retrieves all the displayed information about the selected photo
+ * as tab-separated values and copies it to the Windows clipboard.
+ *
+ * @param hwnd Handle to the parent window
+ */
 static void CopyTsvToClip(HWND hwnd)
 {
     TCHAR szBuf[MAX_PATH * 3] = L"";
@@ -553,6 +817,19 @@ static void CopyTsvToClip(HWND hwnd)
     CopyToClip(hwnd, szBuf);
 }
 
+/**
+ * @brief Display a save file dialog to get a file path
+ *
+ * This function displays a standard Windows save file dialog to allow the user to
+ * specify a file path for saving, with the option to append a default extension.
+ *
+ * @param hwnd Handle to the parent window
+ * @param uID Resource ID of the file filter string
+ * @param szPath Buffer to receive the selected file path
+ * @param size Size of the buffer
+ * @param szExt Default file extension to append if none is specified
+ * @return TRUE if a file path was selected, FALSE otherwise
+ */
 static BOOL GetSavePath(HWND hwnd, int uID, PTSTR szPath, int size, PCTSTR szExt)
 {
     TCHAR szBuf[MAX_PATH];
@@ -571,6 +848,13 @@ static BOOL GetSavePath(HWND hwnd, int uID, PTSTR szPath, int size, PCTSTR szExt
     return TRUE;
 }
 
+/**
+ * @brief Export the photo list to a TSV file
+ *
+ * This function exports the photo list displayed in the list view to a tab-separated values file.
+ *
+ * @param hwnd Handle to the parent window
+ */
 static void ExportToTsv(HWND hwnd)
 {
     TCHAR szBuf[MAX_PATH] = L"";
@@ -586,6 +870,13 @@ static void ExportToTsv(HWND hwnd)
     MessageBox(hwnd, szBuf, NULL, MB_OK | MB_ICONERROR);
 }
 
+/**
+ * @brief Export the photo list to an HTML file
+ *
+ * This function exports the photo list displayed in the list view to an HTML file.
+ *
+ * @param hwnd Handle to the parent window
+ */
 static void ExportToHtml(HWND hwnd)
 {
     TCHAR szTitle[MAX_PATH], szBuf[MAX_PATH] = L"";
@@ -723,6 +1014,15 @@ static LRESULT Main_OnNotify(HWND hwnd, int wParam, NMHDR *lParam)
     return 0;
 }
 
+/**
+ * @brief Handle the WM_TIMER message
+ *
+ * This function handles timer events for directory opening, reloading, and auto-processing operations,
+ * updating the UI accordingly.
+ *
+ * @param hwnd Handle to the window
+ * @param id Timer identifier
+ */
 static void Main_OnTimer(HWND hwnd, UINT_PTR id)
 {
     ASSERT_VOID(gPhotoLib.iCount > 0);
@@ -737,6 +1037,13 @@ static void Main_OnTimer(HWND hwnd, UINT_PTR id)
     }
 }
 
+/**
+ * @brief Handle the WM_DESTROY message
+ *
+ * This function handles the WM_DESTROY message by cleaning up resources and posting a quit message.
+ *
+ * @param hwnd Handle to the window
+ */
 static void Main_OnDestroy(HWND hwnd)
 {
     DragAcceptFiles(hwnd, FALSE);
@@ -744,6 +1051,15 @@ static void Main_OnDestroy(HWND hwnd)
     PostQuitMessage(0);
 }
 
+/**
+ * @brief Handle the WM_DROPFILES message
+ *
+ * This function handles the WM_DROPFILES message by processing dropped files or directories.
+ * If a directory is dropped, it opens that directory in the application.
+ *
+ * @param hwnd Handle to the window
+ * @param hdrop Handle to the dropped files
+ */
 static void Main_OnDropFiles(HWND hwnd, HDROP hdrop)
 {
     int nDrops = DragQueryFile(hdrop, 0xFFFFFFFF, NULL, 0);
@@ -767,6 +1083,14 @@ typedef struct {
     BOOL isAscending;
 } SORT_THREAD_PARAMS;
 
+/**
+ * @brief Thread function for sorting photos
+ *
+ * This function runs in a separate thread to sort photos by a specified column
+ * and sends a message when the operation is complete.
+ *
+ * @param pVoid Pointer to SORT_THREAD_PARAMS structure containing sort parameters
+ */
 static void __cdecl SortThread(PVOID pVoid)
 {
     SORT_THREAD_PARAMS *pParams = (SORT_THREAD_PARAMS *)pVoid;
@@ -776,6 +1100,15 @@ static void __cdecl SortThread(PVOID pVoid)
     _endthread();
 }
 
+/**
+ * @brief Handle the WM_SORT_START message
+ *
+ * This function handles the WM_SORT_START message by initiating a sorting operation on a background thread.
+ *
+ * @param hwnd Handle to the window
+ * @param columnIndex Index of the column to sort by
+ * @param isAscending TRUE to sort in ascending order, FALSE for descending
+ */
 static void Main_OnSortStart(HWND hwnd, int columnIndex, BOOL isAscending)
 {
     ASSERT_VOID(gPhotoLib.iCount > 0);
@@ -791,6 +1124,13 @@ static void Main_OnSortStart(HWND hwnd, int columnIndex, BOOL isAscending)
     UpdateStatus(IDS_SORT_START, gPhotoLib.iCount);
 }
 
+/**
+ * @brief Handle the WM_SORT_DONE message
+ *
+ * This function handles the WM_SORT_DONE message by redrawing the list view and updating the lock state.
+ *
+ * @param hwnd Handle to the window
+ */
 static void Main_OnSortDone(HWND hwnd)
 {
     ListView_RedrawItems(ghWndListView, 0, gPhotoLib.iCount - 1);
@@ -798,6 +1138,14 @@ static void Main_OnSortDone(HWND hwnd)
     UnLock(hwnd);
 }
 
+/**
+ * @brief Handle the WM_OPENDIR_DONE message
+ *
+ * This function handles the WM_OPENDIR_DONE message by updating the UI after directory opening is complete.
+ *
+ * @param hwnd Handle to the window
+ * @param b TRUE if the directory was opened successfully, FALSE otherwise
+ */
 static void Main_OnOpenDirDone(HWND hwnd, BOOL b)
 {
     KillTimer(hwnd, ID_TIMER_OPENDIR);
@@ -809,6 +1157,13 @@ static void Main_OnOpenDirDone(HWND hwnd, BOOL b)
     UnLock(hwnd);
 }
 
+/**
+ * @brief Handle the WM_RELOAD_DONE message
+ *
+ * This function handles the WM_RELOAD_DONE message by updating the UI after the reload operation is complete.
+ *
+ * @param hwnd Handle to the window
+ */
 static void Main_OnReloadDone(HWND hwnd)
 {
     if (iTraverseEnd >= iTraverseStart)
@@ -819,6 +1174,14 @@ static void Main_OnReloadDone(HWND hwnd)
     UnLock(hwnd);
 }
 
+/**
+ * @brief Lock the UI during operations
+ *
+ * This function disables menu items to prevent user interaction during operations like
+ * opening directories, reloading, or auto-processing.
+ *
+ * @param hwnd Handle to the window
+ */
 static void Lock(HWND hwnd)
 {
     bLock = TRUE;
@@ -833,6 +1196,14 @@ static void Lock(HWND hwnd)
     DragAcceptFiles(hwnd, FALSE);
 }
 
+/**
+ * @brief Unlock the UI after operations
+ *
+ * This function enables menu items and toolbar buttons to allow user interaction after operations like
+ * opening directories, reloading, or auto-processing are complete.
+ *
+ * @param hwnd Handle to the window
+ */
 static void UnLock(HWND hwnd)
 {
     bLock = FALSE;

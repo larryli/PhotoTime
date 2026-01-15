@@ -27,6 +27,14 @@ static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, PCTSTR szPath, PCTSTR szSub);
 static void FreePhoto(PHOTO *pPhoto);
 static BOOL FindFile(HANDLE *phFind, WIN32_FIND_DATA *pWfd, PCTSTR szPath);
 
+/**
+ * @brief Check if a file is a photo file based on its extension
+ *
+ * This function checks if the given file path has a photo file extension (currently jpg/jpeg).
+ *
+ * @param szPath Path to the file to check
+ * @return TRUE if the file is a photo file, FALSE otherwise
+ */
 static BOOL IsPhotoFile(PCTSTR szPath)
 {
     static PCTSTR szExts[] = {
@@ -41,6 +49,15 @@ static BOOL IsPhotoFile(PCTSTR szPath)
     return FALSE;
 }
 
+/**
+ * @brief Check if a directory should be ignored during photo search
+ *
+ * This function checks if the given directory name is in the list of directories to ignore
+ * during the photo search process (e.g., thumbnail or recycle directories).
+ *
+ * @param szPath Name of the directory to check
+ * @return TRUE if the directory should be ignored, FALSE otherwise
+ */
 static BOOL IsIgnoreDirectory(PCTSTR szPath)
 {
     static LPCTSTR szIgnores[] = {
@@ -53,6 +70,16 @@ static BOOL IsIgnoreDirectory(PCTSTR szPath)
     return FALSE;
 }
 
+/**
+ * @brief Recursively find photos in a directory and its subdirectories
+ *
+ * This function searches for photo files in the specified directory and all its subdirectories,
+ * skipping hidden/system files and ignored directories.
+ *
+ * @param szPath Path to the directory to search
+ * @param szSub Subdirectory path relative to the root directory
+ * @return TRUE if the search was successful, FALSE otherwise
+ */
 static BOOL FindPhotoWithSub(PCTSTR szPath, PCTSTR szSub)
 {
     HANDLE hFind = NULL;
@@ -97,6 +124,14 @@ static BOOL FindPhotoWithSub(PCTSTR szPath, PCTSTR szSub)
     return TRUE;
 }
 
+/**
+ * @brief Find photos in a directory
+ *
+ * This function searches for photos in the specified directory and populates the global photo library.
+ *
+ * @param szPath Path to the directory to search for photos
+ * @return TRUE if successful, FALSE otherwise
+ */
 BOOL FindPhotos(PCTSTR szPath)
 {
     FreePhotos();
@@ -115,6 +150,20 @@ BOOL FindPhotos(PCTSTR szPath)
     return FindPhotoWithSub(szPath, NULL);
 }
 
+/**
+ * @brief Fix the filename time based on parsing result and available time information
+ *
+ * This function adjusts the parsed filename time based on the parsing result and available
+ * EXIF or file time information when certain time components are missing.
+ * If the filename doesn't contain time information (PARSEST_NO_TIME), it uses the time
+ * from EXIF data if available, otherwise from file properties.
+ * If the filename contains date but no time (PARSEST_NO_SECOND), it adds the seconds
+ * from the available time source.
+ *
+ * @param pSt Pointer to SYSTEMTIME structure containing the parsed filename time to adjust
+ * @param result Result of the filename time parsing (PARSEST_OK, PARSEST_NO_TIME, or PARSEST_NO_SECOND)
+ * @param pPhoto Pointer to the PHOTO structure containing time information from different sources
+ */
 static void FixFilenameTime(PSYSTEMTIME pSt, const PARSEST_RESULT result, const PHOTO *pPhoto)
 {
     ASSERT_VOID(pPhoto);
@@ -128,6 +177,14 @@ static void FixFilenameTime(PSYSTEMTIME pSt, const PARSEST_RESULT result, const 
         pSt->wSecond = pSt2->wSecond;
 }
 
+/**
+ * @brief Reload photos from the directory
+ *
+ * This function reloads the photos from the directory and updates the global photo library,
+ * checking file existence and updating time information.
+ *
+ * @param done Pointer to integer to store the number of processed photos
+ */
 void ReloadPhotos(int *done)
 {
     ASSERT_VOID(gPhotoLib.iCount > 0);
@@ -211,6 +268,15 @@ update:
     }
 }
 
+/**
+ * @brief Automatically process photos based on time information
+ *
+ * This function performs automatic processing of photos based on the specified type of time information,
+ * updating file times or EXIF data as needed.
+ *
+ * @param done Pointer to integer to store the number of processed photos
+ * @param type Type of automatic processing to perform (all, file time, or EXIF time)
+ */
 void AutoProcPhotos(int *done, AUTOPROCTYPE type)
 {
     BOOL bFile = (type == AUTOPROC_ALL || type == AUTOPROC_FILE);
@@ -341,6 +407,15 @@ static CMP cmps[] = {
     {(cmpfunc_t)AscFilenameTime, (cmpfunc_t)DescFilenameTime},
 };
 
+/**
+ * @brief Sort photos by specified index
+ *
+ * This function sorts the photos in the library based on the specified index in ascending or descending order.
+ * The sorting is performed using qsort_s with comparison functions defined for each column.
+ *
+ * @param idx Index to sort by (0=filename, 1=subdirectory, 2=size, 3=file time, 4=EXIF time, 5=filename time)
+ * @param isAscending TRUE to sort in ascending order, FALSE for descending
+ */
 void SortPhotos(int idx, BOOL isAscending)
 {
     ASSERT_VOID(gPhotoLib.iCount > 0);
@@ -350,6 +425,12 @@ void SortPhotos(int idx, BOOL isAscending)
     (void)qsort_s(gPhotoLib.pPhotos, gPhotoLib.iCount, sizeof(PHOTO *), cmpfunc, NULL);
 }
 
+/**
+ * @brief Free all memory associated with the photo library
+ *
+ * This function frees all memory allocated for the global photo library, including
+ * all individual photo entries and their associated data.
+ */
 static void FreePhotos(void)
 {
     if (gPhotoLib.szPath) {

@@ -5,6 +5,12 @@
 
 #include "commctrls.h"
 
+/**
+ * @brief Initialize common controls
+ *
+ * This function initializes the common controls library by calling InitCommonControlsEx
+ * with the appropriate initialization structure.
+ */
 void InitCommCtrl(void)
 {
     INITCOMMONCONTROLSEX icc = {
@@ -14,6 +20,14 @@ void InitCommCtrl(void)
     InitCommonControlsEx(&icc);
 }
 
+/**
+ * @brief Check if common controls version 6 is available
+ *
+ * This function checks whether version 6 of the common controls library is available
+ * by loading comctl32.dll and querying its version.
+ *
+ * @return TRUE if version 6 is available, FALSE otherwise
+ */
 BOOL IsCommCtrlVersion6(void)
 {
     static BOOL isCommCtrlVersion6 = -1;

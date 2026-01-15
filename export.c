@@ -11,12 +11,31 @@
 
 #include "main.h"
 
+/**
+ * @brief Save data to a file
+ *
+ * This function writes the specified amount of data to the given file handle.
+ *
+ * @param hFile Handle to the file to write to
+ * @param pData Pointer to the data to write
+ * @param dwSize Number of bytes to write
+ * @return TRUE if the write operation was successful, FALSE otherwise
+ */
 static inline BOOL SaveData(HANDLE hFile, PVOID pData, DWORD dwSize)
 {
     DWORD dwBytesWritten = 0;
     return WriteFile(hFile, pData, dwSize, &dwBytesWritten, NULL);
 }
 
+/**
+ * @brief Save a string to a file in UTF-8 encoding
+ *
+ * This function converts a wide character string to UTF-8 and writes it to the specified file.
+ *
+ * @param hFile Handle to the file to write to
+ * @param szBuf Pointer to the wide character string to save
+ * @return TRUE if the operation was successful, FALSE otherwise
+ */
 static BOOL SaveString(HANDLE hFile, PCTSTR szBuf)
 {
     int size = WideCharToMultiByte(CP_UTF8, 0, szBuf, -1, NULL, 0, NULL, NULL);
@@ -28,6 +47,15 @@ static BOOL SaveString(HANDLE hFile, PCTSTR szBuf)
     return bRet;
 }
 
+/**
+ * @brief Export list view content to TSV file
+ *
+ * This function exports the content of a list view control to a tab-separated values file.
+ *
+ * @param hWndLV Handle to the list view control
+ * @param szPath Path to the output TSV file
+ * @return TRUE if the export was successful, FALSE otherwise
+ */
 BOOL ExportToTsvFile(HWND hWndLV, PCTSTR szPath)
 {
     HANDLE hFile = CreateFile(szPath, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -57,6 +85,16 @@ end:
     return bRet;
 }
 
+/**
+ * @brief Export list view content to HTML file
+ *
+ * This function exports the content of a list view control to an HTML file with basic styling.
+ *
+ * @param hWndLV Handle to the list view control
+ * @param szPath Path to the output HTML file
+ * @param szTitle Title for the HTML document and heading
+ * @return TRUE if the export was successful, FALSE otherwise
+ */
 BOOL ExportToHtmlFile(HWND hWndLV, PCTSTR szPath, PCTSTR szTitle)
 {
     HANDLE hFile = CreateFile(szPath, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);

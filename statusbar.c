@@ -10,6 +10,15 @@
 
 static LONG scxSysLink = 248;
 
+/**
+ * @brief Size the panels in the status bar
+ *
+ * This function adjusts the sizes of the panels in the status bar based on the parent window size
+ * and the presence of a system link window.
+ *
+ * @param hWndParent Handle to the parent window
+ * @param hWndStatusBar Handle to the status bar window
+ */
 void SizeStatusPanels(HWND hWndParent, HWND hWndStatusBar)
 {
     RECT rect;
@@ -27,6 +36,17 @@ void SizeStatusPanels(HWND hWndParent, HWND hWndStatusBar)
         MoveWindow(hWndSysLink, ptArray[1] + 4, 2, cxSysLink - 16, 16, TRUE);
 }
 
+/**
+ * @brief Create a status bar window
+ *
+ * This function creates a status bar control as a child window with optional text and URL link.
+ *
+ * @param hWndParent Handle to the parent window
+ * @param hInst Instance handle of the application
+ * @param szText Initial text to display in the status bar
+ * @param szUrl URL to associate with the status bar (for clickable links)
+ * @return Handle to the created status bar window
+ */
 HWND CreateStatusBarWnd(HWND hWndParent, HINSTANCE hInst, TCHAR *szText, TCHAR *szUrl)
 {
     HWND hWndStatusBar = CreateStatusWindow(WS_CHILD | WS_VISIBLE | WS_BORDER | SBARS_SIZEGRIP,
@@ -47,6 +67,15 @@ HWND CreateStatusBarWnd(HWND hWndParent, HINSTANCE hInst, TCHAR *szText, TCHAR *
     return hWndStatusBar;
 }
 
+/**
+ * @brief Set text in a status bar panel
+ *
+ * This function sets the text in a specific panel of the status bar.
+ *
+ * @param hwndStatusBar Handle to the status bar window
+ * @param id ID of the panel to update
+ * @param szStatusString Text to display in the panel
+ */
 void SetStatusBarText(HWND hwndStatusBar, int id, TCHAR *szStatusString)
 {
     SendMessage(hwndStatusBar, SB_SETTEXT, id, (LPARAM)szStatusString);

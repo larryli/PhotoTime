@@ -20,6 +20,16 @@ static void ListView_SetHeaderSortImage(HWND, int, BOOL);
 static int lastnColumnIndex = -1;
 static BOOL bAscendingOrder = FALSE;
 
+/**
+ * @brief Create a list view window
+ *
+ * This function creates a list view control as a child window with extended styles
+ * and predefined columns for displaying photo information.
+ *
+ * @param hWndParent Handle to the parent window
+ * @param hInst Instance handle of the application
+ * @return Handle to the created list view window
+ */
 HWND CreateListViewWnd(HWND hWndParent, HINSTANCE hInst)
 {
     HWND hWndLV = CreateWindowEx(WS_EX_CLIENTEDGE,
@@ -66,6 +76,15 @@ HWND CreateListViewWnd(HWND hWndParent, HINSTANCE hInst)
     return hWndLV;
 }
 
+/**
+ * @brief Get total width of all columns in the list view
+ *
+ * This function calculates the total width of all columns in the list view control,
+ * including an estimated width for the vertical scroll bar.
+ *
+ * @param hWndLV Handle to the list view control
+ * @return Total width of all columns plus scroll bar width
+ */
 int ListViewGetColumnWidth(HWND hWndLV)
 {
     int w = 24; // vscroll width
@@ -74,6 +93,15 @@ int ListViewGetColumnWidth(HWND hWndLV)
     return w;
 }
 
+/**
+ * @brief Handle column click event in list view
+ *
+ * This function handles the notification when a column header in the list view is clicked,
+ * toggling the sort order and sending a message to initiate sorting.
+ *
+ * @param hWndParent Handle to the parent window
+ * @param nmlv Pointer to NMLISTVIEW structure containing the notification information
+ */
 void ListViewColumnClick(HWND hWndParent, NMLISTVIEW *nmlv)
 {
     bAscendingOrder = (lastnColumnIndex == nmlv->iSubItem) ? !bAscendingOrder : FALSE;
@@ -82,6 +110,14 @@ void ListViewColumnClick(HWND hWndParent, NMLISTVIEW *nmlv)
     SendMessage(hWndParent, WM_SORT_START, (WPARAM)nmlv->iSubItem, (LPARAM)bAscendingOrder);
 }
 
+/**
+ * @brief Clean up sorting in list view
+ *
+ * This function resets the sorting state in the list view and clears the sort indicator
+ * from the column headers.
+ *
+ * @param hListView Handle to the list view control
+ */
 void ListViewCleanSort(HWND hListView)
 {
     lastnColumnIndex = -1;
@@ -89,6 +125,15 @@ void ListViewCleanSort(HWND hListView)
     ListView_SetHeaderSortImage(hListView, lastnColumnIndex, bAscendingOrder);
 }
 
+/**
+ * @brief Handle display information request for list view
+ *
+ * This function handles the LVN_DISPINFO notification for the list view, providing
+ * text content for specific cells in the list view based on photo information.
+ *
+ * @param hWndParent Handle to the parent window
+ * @param lpdi Pointer to LV_DISPINFO structure containing the display information request
+ */
 void ListViewDispInfo(HWND hWndParent, LV_DISPINFO *lpdi)
 {
     ASSERT_VOID(lpdi->item.mask & LVIF_TEXT);
@@ -124,6 +169,16 @@ void ListViewDispInfo(HWND hWndParent, LV_DISPINFO *lpdi)
     (void)_tcscpy_s(lpdi->item.pszText, lpdi->item.cchTextMax, szBuf);
 }
 
+/**
+ * @brief Handle custom drawing for list view
+ *
+ * This function handles custom drawing notifications for the list view control,
+ * allowing for custom coloring of items based on their status.
+ *
+ * @param hWndParent Handle to the parent window
+ * @param lpcd Pointer to NMLVCUSTOMDRAW structure containing custom draw information
+ * @return Result of the custom drawing operation
+ */
 LRESULT ListViewCustomDraw(HWND hWndParent, LPNMLVCUSTOMDRAW lpcd)
 {
     switch (lpcd->nmcd.dwDrawStage) {
@@ -150,6 +205,15 @@ LRESULT ListViewCustomDraw(HWND hWndParent, LPNMLVCUSTOMDRAW lpcd)
     return CDRF_DODEFAULT;
 }
 
+/**
+ * @brief Format a SYSTEMTIME structure as a string
+ *
+ * This function formats a SYSTEMTIME structure into a string with the format "YYYY-MM-DD HH:MM:SS".
+ *
+ * @param szBuf Buffer to store the formatted string
+ * @param iMax Maximum number of characters to write to the buffer
+ * @param pSt Pointer to the SYSTEMTIME structure to format
+ */
 static void FormatSystemTime(LPTSTR szBuf, int iMax, SYSTEMTIME *pSt)
 {
     swprintf(szBuf, iMax, L"%.4d-%.2d-%.2d %.2d:%.2d:%.2d",
@@ -157,6 +221,16 @@ static void FormatSystemTime(LPTSTR szBuf, int iMax, SYSTEMTIME *pSt)
              pSt->wHour, pSt->wMinute, pSt->wSecond);
 }
 
+/**
+ * @brief Set the sort indicator image in the list view header
+ *
+ * This function sets the sort direction indicator (ascending/descending arrow) in the
+ * header of the specified column in the list view control.
+ *
+ * @param hWndLV Handle to the list view control
+ * @param columnIndex Index of the column to set the sort indicator for
+ * @param isAscending TRUE to show ascending sort indicator, FALSE for descending
+ */
 static void ListView_SetHeaderSortImage(HWND hWndLV, int columnIndex, BOOL isAscending)
 {
     HWND header = ListView_GetHeader(hWndLV);

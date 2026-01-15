@@ -14,6 +14,15 @@
 static WNDPROC pPhotoViewProc = NULL;
 static LRESULT CALLBACK PhotoViewWndProc(HWND, UINT, WPARAM, LPARAM);
 
+/**
+ * @brief Create a photo view window
+ *
+ * This function creates a photo view control as a child window with a custom window procedure.
+ *
+ * @param hWndParent Handle to the parent window
+ * @param hInst Instance handle of the application
+ * @return Handle to the created photo view window
+ */
 HWND CreatePhotoViewWnd(HWND hWndParent, HINSTANCE hInst)
 {
     HWND hWndPV = CreateWindowEx(WS_EX_STATICEDGE,
@@ -32,12 +41,29 @@ HWND CreatePhotoViewWnd(HWND hWndParent, HINSTANCE hInst)
     return hWndPV;
 }
 
+/**
+ * @brief Destroy the photo view window
+ *
+ * This function restores the original window procedure and cleans up the photo view window.
+ *
+ * @param hWndPV Handle to the photo view window to destroy
+ */
 void DestroyPhotoViewWnd(HWND hWndPV)
 {
     ASSERT_VOID(pPhotoViewProc);
     SetWindowLongPtr(hWndPV, GWLP_WNDPROC, (LONG_PTR)pPhotoViewProc);
 }
 
+/**
+ * @brief Handle the PVM_SETPATH message to set the photo path
+ *
+ * This function handles the custom PVM_SETPATH message to set the path of the photo to display
+ * in the photo view window, loading the image and updating the window data.
+ *
+ * @param hwnd Handle to the photo view window
+ * @param szPath Path to the photo file to display
+ * @return TRUE if the photo was loaded successfully, FALSE otherwise
+ */
 static BOOL PhotoView_OnSetPath(HWND hwnd, PCTSTR szPath)
 {
     InvalidateRect(hwnd, NULL, TRUE);
@@ -54,6 +80,16 @@ static BOOL PhotoView_OnSetPath(HWND hwnd, PCTSTR szPath)
     return (p != -1); // NULL is TRUE
 }
 
+/**
+ * @brief Handle the PVM_GETSIZE message to get the photo size
+ *
+ * This function handles the custom PVM_GETSIZE message to retrieve the size of the currently
+ * displayed photo.
+ *
+ * @param hwnd Handle to the photo view window
+ * @param pSize Pointer to SIZE structure to store the photo dimensions
+ * @return TRUE if the size was retrieved successfully, FALSE otherwise
+ */
 static BOOL PhotoView_OnGetSize(HWND hwnd, PSIZE pSize)
 {
     LONG_PTR p = GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -63,6 +99,15 @@ static BOOL PhotoView_OnGetSize(HWND hwnd, PSIZE pSize)
     return GdipGetSize((void *)p, pSize);
 }
 
+/**
+ * @brief Handle the WM_ERASEBKGND message to erase the background
+ *
+ * This function handles the WM_ERASEBKGND message by filling the client area with the button face color.
+ *
+ * @param hwnd Handle to the photo view window
+ * @param hdc Handle to the device context for erasing
+ * @return TRUE to indicate the background was erased
+ */
 static BOOL PhotoView_OnEraseBkgnd(HWND hwnd, HDC hdc)
 {
     RECT rc;
@@ -71,6 +116,16 @@ static BOOL PhotoView_OnEraseBkgnd(HWND hwnd, HDC hdc)
     return TRUE;
 }
 
+/**
+ * @brief Draw a string resource in the center of a rectangle
+ *
+ * This function loads a string from resources and draws it centered in the specified rectangle.
+ *
+ * @param hwnd Handle to the window
+ * @param hdc Handle to the device context to draw on
+ * @param rc Pointer to the rectangle to draw in
+ * @param id Resource ID of the string to draw
+ */
 static void DrawIdString(HWND hwnd, HDC hdc, RECT *rc, int id)
 {
     TCHAR szBuf[MAX_PATH];
@@ -81,6 +136,13 @@ static void DrawIdString(HWND hwnd, HDC hdc, RECT *rc, int id)
     DrawText(hdc, szBuf, -1, rc, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
 }
 
+/**
+ * @brief Handle the WM_PAINT message to paint the photo view
+ *
+ * This function handles the WM_PAINT message by drawing the currently loaded photo or an error message.
+ *
+ * @param hwnd Handle to the photo view window
+ */
 static void PhotoView_OnPaint(HWND hwnd)
 {
     PAINTSTRUCT ps;
