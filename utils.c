@@ -34,7 +34,7 @@ void CatFilePath(PTSTR szBuf, int size, PCTSTR szParent, PCTSTR szPath)
  * This function extracts the file extension from a file path.
  *
  * @param szPath Path to the file
- * @return Pointer to the extension part of the path (including the dot), or NULL if no extension exists
+ * @return Pointer to the extension part of the path or NULL if no extension exists
  */
 PCTSTR GetFileExt(PCTSTR szPath)
 {

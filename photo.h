@@ -34,7 +34,6 @@ typedef struct {
 typedef struct {
     LPTSTR szPath;              /**< Path to the photo library */
     PHOTO **pPhotos;            /**< Array of pointers to photos */
-    HGLOBAL hPhotos;            /**< Global memory handle for photos */
     int iCount;                 /**< Number of photos in the library */
     int iSize;                  /**< Size of the photo array */
 } PHOTOLIB;

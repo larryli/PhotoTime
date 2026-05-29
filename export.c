@@ -39,11 +39,11 @@ static inline BOOL SaveData(HANDLE hFile, PVOID pData, DWORD dwSize)
 static BOOL SaveString(HANDLE hFile, PCTSTR szBuf)
 {
     int size = WideCharToMultiByte(CP_UTF8, 0, szBuf, -1, NULL, 0, NULL, NULL);
-    PVOID p = GlobalAlloc(GMEM_FIXED, size);
+    PVOID p = HeapAlloc(GetProcessHeap(), 0, size);
     ASSERT_FALSE(p);
     WideCharToMultiByte(CP_UTF8, 0, szBuf, -1, p, size, NULL, NULL);
     BOOL bRet = SaveData(hFile, p, size - 1); // fix '\0'
-    GlobalFree(p);
+    HeapFree(GetProcessHeap(), 0, p);
     return bRet;
 }
 

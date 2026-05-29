@@ -17,7 +17,6 @@
 PHOTOLIB gPhotoLib = {
     .szPath = NULL,
     .pPhotos = NULL,
-    .hPhotos = 0,
     .iCount = 0,
     .iSize = 0,
 };
@@ -108,16 +107,13 @@ static BOOL FindPhotoWithSub(PCTSTR szPath, PCTSTR szSub)
         ASSERT_CONTINUE(pPhoto); // skip
         if (gPhotoLib.iCount >= gPhotoLib.iSize) {
             gPhotoLib.iSize += PHOTOS_SIZE;
-            gPhotoLib.pPhotos = NULL;
-            GlobalUnlock(gPhotoLib.hPhotos);
-            HGLOBAL h = GlobalReAlloc(gPhotoLib.hPhotos, sizeof(PHOTO *) * gPhotoLib.iSize,
-                                      GMEM_MOVEABLE | GMEM_ZEROINIT);
-            if (!h) {
+            PHOTO **p = (PHOTO **)HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY,
+                                              gPhotoLib.pPhotos, sizeof(PHOTO *) * gPhotoLib.iSize);
+            if (!p) {
                 FreePhoto(pPhoto);
                 return FALSE;
             }
-            gPhotoLib.hPhotos = h;
-            gPhotoLib.pPhotos = (PHOTO **)GlobalLock(gPhotoLib.hPhotos);
+            gPhotoLib.pPhotos = p;
         }
         gPhotoLib.pPhotos[gPhotoLib.iCount++] = pPhoto;
     }
@@ -136,17 +132,16 @@ BOOL FindPhotos(PCTSTR szPath)
 {
     FreePhotos();
     int size = lstrlen(szPath) + 1;
-    gPhotoLib.szPath = GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, sizeof(TCHAR) * size);
+    gPhotoLib.szPath = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(TCHAR) * size);
     ASSERT_FALSE(gPhotoLib.szPath);
     (void)_tcscpy_s(gPhotoLib.szPath, size, szPath);
     gPhotoLib.iSize = PHOTOS_SIZE;
-    gPhotoLib.hPhotos = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(PHOTO *) * gPhotoLib.iSize);
-    if (!gPhotoLib.hPhotos) {
-        GlobalFree(gPhotoLib.szPath);
+    gPhotoLib.pPhotos = (PHOTO **)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PHOTO *) * gPhotoLib.iSize);
+    if (!gPhotoLib.pPhotos) {
+        HeapFree(GetProcessHeap(), 0, gPhotoLib.szPath);
         gPhotoLib.szPath = NULL;
         return FALSE;
     }
-    gPhotoLib.pPhotos = (PHOTO **)GlobalLock(gPhotoLib.hPhotos);
     return FindPhotoWithSub(szPath, NULL);
 }
 
@@ -203,15 +198,15 @@ void ReloadPhotos(int *done)
             pPhoto->filesize.LowPart = 0;
             pPhoto->filesize.HighPart = 0;
             if (pPhoto->pStFileTime) {
-                GlobalFree(pPhoto->pStFileTime);
+                HeapFree(GetProcessHeap(), 0, pPhoto->pStFileTime);
                 pPhoto->pStFileTime = NULL;
             }
             if (pPhoto->pStExifTime) {
-                GlobalFree(pPhoto->pStExifTime);
+                HeapFree(GetProcessHeap(), 0, pPhoto->pStExifTime);
                 pPhoto->pStExifTime = NULL;
             }
             if (pPhoto->pStFilenameTime) {
-                GlobalFree(pPhoto->pStFilenameTime);
+                HeapFree(GetProcessHeap(), 0, pPhoto->pStFilenameTime);
                 pPhoto->pStFilenameTime = NULL;
             }
             goto update;
@@ -224,11 +219,11 @@ void ReloadPhotos(int *done)
         FILETIME ft;
         if (GetFileTime(hFile, NULL, NULL, &ft)) {
             if (!(pPhoto->pStFileTime))
-                pPhoto->pStFileTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
+                pPhoto->pStFileTime = (PSYSTEMTIME)HeapAlloc(GetProcessHeap(), 0, sizeof(SYSTEMTIME));
             if (pPhoto->pStFileTime)
                 FileTimeToLocalSystemTime(&ft, pPhoto->pStFileTime);
         } else if (pPhoto->pStFileTime) {
-            GlobalFree(pPhoto->pStFileTime);
+            HeapFree(GetProcessHeap(), 0, pPhoto->pStFileTime);
             pPhoto->pStFileTime = NULL;
             pPhoto->type = PHOTO_MISSING;
         }
@@ -237,14 +232,14 @@ void ReloadPhotos(int *done)
         SYSTEMTIME st;
         if (GdipGetTagSystemTime(szPath, &st)) {
             if (!(pPhoto->pStExifTime))
-                pPhoto->pStExifTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
+                pPhoto->pStExifTime = (PSYSTEMTIME)HeapAlloc(GetProcessHeap(), 0, sizeof(SYSTEMTIME));
             if (pPhoto->pStExifTime)
                 CopyMemory(pPhoto->pStExifTime, &st, sizeof(SYSTEMTIME));
-            if (pPhoto->type == PHOTO_DEFAULT)
+            if (pPhoto->type == PHOTO_DEFAULT && pPhoto->pStExifTime && pPhoto->pStFileTime)
                 pPhoto->type = PSYSTEMTIME_EQUAL(pPhoto->pStExifTime, pPhoto->pStFileTime)
                                ? PHOTO_RIGHT : PHOTO_ERROR;
         } else if (pPhoto->pStExifTime) {
-            GlobalFree(pPhoto->pStExifTime);
+            HeapFree(GetProcessHeap(), 0, pPhoto->pStExifTime);
             pPhoto->pStExifTime = NULL;
         }
 
@@ -252,14 +247,14 @@ void ReloadPhotos(int *done)
         if (ParseStringToSystemTime(pPhoto->szFilename, &st, &result)) {
             FixFilenameTime(&st, result, pPhoto);
             if (!(pPhoto->pStFilenameTime))
-                pPhoto->pStFilenameTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
+                pPhoto->pStFilenameTime = (PSYSTEMTIME)HeapAlloc(GetProcessHeap(), 0, sizeof(SYSTEMTIME));
             if (pPhoto->pStFilenameTime)
                 CopyMemory(pPhoto->pStFilenameTime, &st, sizeof(SYSTEMTIME));
-            if (pPhoto->type == PHOTO_DEFAULT)
+            if (pPhoto->type == PHOTO_DEFAULT && pPhoto->pStFilenameTime && pPhoto->pStFileTime)
                 pPhoto->type = PSYSTEMTIME_EQUAL(pPhoto->pStFilenameTime, pPhoto->pStFileTime)
                                ? PHOTO_RIGHT : PHOTO_WARN;
         } else if (pPhoto->pStFilenameTime) {
-            GlobalFree(pPhoto->pStFilenameTime);
+            HeapFree(GetProcessHeap(), 0, pPhoto->pStFilenameTime);
             pPhoto->pStFilenameTime = NULL;
         }
 update:
@@ -308,7 +303,7 @@ void AutoProcPhotos(int *done, AUTOPROCTYPE type)
         } else if (pPhoto->pStFilenameTime) {
             if (bExif && GdipSaveImageWithTagSystemTime(szPath, pPhoto->pStFilenameTime)) {
                 if (!(pPhoto->pStExifTime))
-                    pPhoto->pStExifTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
+                    pPhoto->pStExifTime = (PSYSTEMTIME)HeapAlloc(GetProcessHeap(), 0, sizeof(SYSTEMTIME));
                 if (pPhoto->pStExifTime)
                     CopyMemory(pPhoto->pStExifTime, pPhoto->pStFilenameTime, sizeof(SYSTEMTIME));
 
@@ -434,37 +429,33 @@ void SortPhotos(int idx, BOOL isAscending)
 static void FreePhotos(void)
 {
     if (gPhotoLib.szPath) {
-        GlobalFree(gPhotoLib.szPath);
+        HeapFree(GetProcessHeap(), 0, gPhotoLib.szPath);
         gPhotoLib.szPath = NULL;
     }
     if (gPhotoLib.pPhotos) {
         for (int i = 0; i < gPhotoLib.iCount; i++)
             FreePhoto(gPhotoLib.pPhotos[i]);
+        HeapFree(GetProcessHeap(), 0, gPhotoLib.pPhotos);
         gPhotoLib.pPhotos = NULL;
     }
     gPhotoLib.iCount = 0;
-    if (gPhotoLib.hPhotos) {
-        GlobalUnlock(gPhotoLib.hPhotos);
-        GlobalFree(gPhotoLib.hPhotos);
-        gPhotoLib.hPhotos = NULL;
-    }
     gPhotoLib.iSize = 0;
 }
 
 static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
 {
-    PHOTO *pPhoto = (PHOTO *)GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, sizeof(PHOTO));
+    PHOTO *pPhoto = (PHOTO *)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PHOTO));
     ASSERT_NULL(pPhoto);
     pPhoto->type = PHOTO_DEFAULT;
 
     int size = lstrlen(pWfd->cFileName) + 1;
-    pPhoto->szFilename = (LPTSTR)GlobalAlloc(GMEM_FIXED, sizeof(TCHAR) * size);
+    pPhoto->szFilename = (LPTSTR)HeapAlloc(GetProcessHeap(), 0, sizeof(TCHAR) * size);
     ASSERT_FAILED(pPhoto->szFilename);
     (void)_tcscpy_s(pPhoto->szFilename, size, pWfd->cFileName);
 
     if (szSub) {
         size = lstrlen(szSub) + 1;
-        pPhoto->szSubPath = (LPTSTR)GlobalAlloc(GMEM_FIXED, sizeof(TCHAR) * size);
+        pPhoto->szSubPath = (LPTSTR)HeapAlloc(GetProcessHeap(), 0, sizeof(TCHAR) * size);
         ASSERT_FAILED(pPhoto->szSubPath);
         (void)_tcscpy_s(pPhoto->szSubPath, size, szSub);
     }
@@ -472,13 +463,13 @@ static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
     pPhoto->filesize.LowPart = pWfd->nFileSizeLow;
     pPhoto->filesize.HighPart = pWfd->nFileSizeHigh;
 
-    pPhoto->pStFileTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
+    pPhoto->pStFileTime = (PSYSTEMTIME)HeapAlloc(GetProcessHeap(), 0, sizeof(SYSTEMTIME));
     ASSERT_FAILED(pPhoto->pStFileTime);
     FileTimeToLocalSystemTime(&pWfd->ftLastWriteTime, pPhoto->pStFileTime);
 
     SYSTEMTIME st;
     if (GdipGetTagSystemTime(szPath, &st)) {
-        pPhoto->pStExifTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
+        pPhoto->pStExifTime = (PSYSTEMTIME)HeapAlloc(GetProcessHeap(), 0, sizeof(SYSTEMTIME));
         ASSERT_FAILED(pPhoto->pStExifTime);
         CopyMemory(pPhoto->pStExifTime, &st, sizeof(SYSTEMTIME));
         if (pPhoto->type == PHOTO_DEFAULT)
@@ -489,7 +480,7 @@ static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
     PARSEST_RESULT result;
     if (ParseStringToSystemTime(pPhoto->szFilename, &st, &result)) {
         FixFilenameTime(&st, result, pPhoto);
-        pPhoto->pStFilenameTime = (PSYSTEMTIME)GlobalAlloc(GMEM_FIXED, sizeof(SYSTEMTIME));
+        pPhoto->pStFilenameTime = (PSYSTEMTIME)HeapAlloc(GetProcessHeap(), 0, sizeof(SYSTEMTIME));
         ASSERT_FAILED(pPhoto->pStFilenameTime);
         CopyMemory(pPhoto->pStFilenameTime, &st, sizeof(SYSTEMTIME));
         if (pPhoto->type == PHOTO_DEFAULT)
@@ -501,16 +492,16 @@ static PHOTO *NewPhoto(WIN32_FIND_DATA *pWfd, LPCTSTR szPath, LPCTSTR szSub)
 
 failed:
     if (pPhoto->szFilename)
-        GlobalFree(pPhoto->szFilename);
+        HeapFree(GetProcessHeap(), 0, pPhoto->szFilename);
     if (pPhoto->szSubPath)
-        GlobalFree(pPhoto->szSubPath);
+        HeapFree(GetProcessHeap(), 0, pPhoto->szSubPath);
     if (pPhoto->pStFileTime)
-        GlobalFree(pPhoto->pStFileTime);
+        HeapFree(GetProcessHeap(), 0, pPhoto->pStFileTime);
     if (pPhoto->pStExifTime)
-        GlobalFree(pPhoto->pStExifTime);
+        HeapFree(GetProcessHeap(), 0, pPhoto->pStExifTime);
     if (pPhoto->pStFilenameTime)
-        GlobalFree(pPhoto->pStFilenameTime);
-    GlobalFree(pPhoto);
+        HeapFree(GetProcessHeap(), 0, pPhoto->pStFilenameTime);
+    HeapFree(GetProcessHeap(), 0, pPhoto);
     return NULL;
 }
 
@@ -518,16 +509,16 @@ static void FreePhoto(PHOTO *pPhoto)
 {
     ASSERT_VOID(pPhoto);
     if (pPhoto->szFilename)
-        GlobalFree(pPhoto->szFilename);
+        HeapFree(GetProcessHeap(), 0, pPhoto->szFilename);
     if (pPhoto->szSubPath)
-        GlobalFree(pPhoto->szSubPath);
+        HeapFree(GetProcessHeap(), 0, pPhoto->szSubPath);
     if (pPhoto->pStFileTime)
-        GlobalFree(pPhoto->pStFileTime);
+        HeapFree(GetProcessHeap(), 0, pPhoto->pStFileTime);
     if (pPhoto->pStExifTime)
-        GlobalFree(pPhoto->pStExifTime);
+        HeapFree(GetProcessHeap(), 0, pPhoto->pStExifTime);
     if (pPhoto->pStFilenameTime)
-        GlobalFree(pPhoto->pStFilenameTime);
-    GlobalFree(pPhoto);
+        HeapFree(GetProcessHeap(), 0, pPhoto->pStFilenameTime);
+    HeapFree(GetProcessHeap(), 0, pPhoto);
 }
 
 static inline BOOL IsFileOrSubDirectory(LPCTSTR szPath)

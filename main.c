@@ -431,7 +431,7 @@ static void __cdecl OpenDirThread(PVOID pVoid)
     OPENDIR_THREAD_PARAMS *pParams = (OPENDIR_THREAD_PARAMS *)pVoid;
     WPARAM wParam = (WPARAM)FindPhotos(pParams->szPath);
     SendMessage(pParams->hWnd, WM_OPENDIR_DONE, wParam, 0);
-    GlobalFree(pVoid);
+    HeapFree(GetProcessHeap(), 0, pVoid);
     _endthread();
 }
 
@@ -453,8 +453,8 @@ static void OpenDir(HWND hwnd, LPTSTR szPath)
         SetWindowText(hwnd, szBuf);
     }
 
-    OPENDIR_THREAD_PARAMS *pParams = (OPENDIR_THREAD_PARAMS *)GlobalAlloc(
-        GMEM_FIXED | GMEM_ZEROINIT, sizeof(OPENDIR_THREAD_PARAMS));
+    OPENDIR_THREAD_PARAMS *pParams = (OPENDIR_THREAD_PARAMS *)HeapAlloc(
+        GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(OPENDIR_THREAD_PARAMS));
     ASSERT_VOID(pParams);
     Lock(hwnd);
     pParams->hWnd = hwnd;
@@ -462,7 +462,11 @@ static void OpenDir(HWND hwnd, LPTSTR szPath)
     ShowPhoto(-1);
     ListView_DeleteAllItems(ghWndListView);
     ListViewCleanSort(ghWndListView);
-    _beginthread(OpenDirThread, 0, pParams);
+    if (_beginthread(OpenDirThread, 0, pParams) == -1) {
+        HeapFree(GetProcessHeap(), 0, pParams);
+        UnLock(hwnd);
+        return;
+    }
     TCHAR szBuf[MAX_PATH];
     if (LoadString(ghInstance, IDS_OPENDIR_START, szBuf, NELEMS(szBuf)))
         SetStatusBarText(ghWndStatusBar, 0, szBuf);
@@ -582,7 +586,7 @@ static void __cdecl ReloadThread(PVOID pVoid)
     TRAVERSE_THREAD_PARAMS *pParams = (TRAVERSE_THREAD_PARAMS *)pVoid;
     ReloadPhotos(pParams->done);
     SendMessage(pParams->hWnd, WM_RELOAD_DONE, 0, 0);
-    GlobalFree(pVoid);
+    HeapFree(GetProcessHeap(), 0, pVoid);
     _endthread();
 }
 
@@ -606,7 +610,7 @@ static void __cdecl AutoProcThread(PVOID pVoid)
 #pragma warn(pop)
 #endif
     SendMessage(pParams->hWnd, WM_RELOAD_DONE, 0, 0);
-    GlobalFree(pVoid);
+    HeapFree(GetProcessHeap(), 0, pVoid);
     _endthread();
 }
 
@@ -627,8 +631,8 @@ static void Traverse(HWND hwnd, void (__cdecl *thread)(PVOID), PVOID pVoid, UINT
 {
     ASSERT_VOID(gPhotoLib.iCount > 0);
     ASSERT_VOID(gPhotoLib.pPhotos);
-    TRAVERSE_THREAD_PARAMS *pParams = (TRAVERSE_THREAD_PARAMS *)GlobalAlloc(
-        GMEM_FIXED | GMEM_ZEROINIT, sizeof(TRAVERSE_THREAD_PARAMS));
+    TRAVERSE_THREAD_PARAMS *pParams = (TRAVERSE_THREAD_PARAMS *)HeapAlloc(
+        GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(TRAVERSE_THREAD_PARAMS));
     ASSERT_VOID(pParams);
     Lock(hwnd);
     pParams->hWnd = hwnd;
@@ -636,7 +640,11 @@ static void Traverse(HWND hwnd, void (__cdecl *thread)(PVOID), PVOID pVoid, UINT
     pParams->pVoid = pVoid;
     iTraverseStart = 0;
     iTraverseEnd = -1;
-    _beginthread(thread, 0, pParams);
+    if (_beginthread(thread, 0, pParams) == -1) {
+        HeapFree(GetProcessHeap(), 0, pParams);
+        UnLock(hwnd);
+        return;
+    }
     UpdateStatus(uId, gPhotoLib.iCount);
     SetTimer(hwnd, uTimer, uElapse, NULL);
 }
@@ -1029,7 +1037,7 @@ static void Main_OnTimer(HWND hwnd, UINT_PTR id)
     if (id == ID_TIMER_OPENDIR) {
         ListView_SetItemCount(ghWndListView, gPhotoLib.iCount);
         UpdateStatus(IDS_OPENDIR_RUN, gPhotoLib.iCount);
-    } else if ((id == ID_TIMER_RELOAD || ID_TIMER_AUTOPROC) && iTraverseEnd >= iTraverseStart) {
+    } else if ((id == ID_TIMER_RELOAD || id == ID_TIMER_AUTOPROC) && iTraverseEnd >= iTraverseStart) {
         ListView_RedrawItems(ghWndListView, iTraverseStart, iTraverseEnd);
         iTraverseStart = iTraverseEnd + 1; // (1, 0) do not redraw
         UpdateStatus(id == ID_TIMER_RELOAD ? IDS_RELOAD_RUN : IDS_AUTOPROC_RUN,
@@ -1096,7 +1104,7 @@ static void __cdecl SortThread(PVOID pVoid)
     SORT_THREAD_PARAMS *pParams = (SORT_THREAD_PARAMS *)pVoid;
     SortPhotos(pParams->columnIndex, pParams->isAscending);
     SendMessage(pParams->hWnd, WM_SORT_DONE, 0, 0);
-    GlobalFree(pVoid);
+    HeapFree(GetProcessHeap(), 0, pVoid);
     _endthread();
 }
 
@@ -1113,14 +1121,18 @@ static void Main_OnSortStart(HWND hwnd, int columnIndex, BOOL isAscending)
 {
     ASSERT_VOID(gPhotoLib.iCount > 0);
     ASSERT_VOID(gPhotoLib.pPhotos);
-    SORT_THREAD_PARAMS *pParams = (SORT_THREAD_PARAMS *)GlobalAlloc(
-        GMEM_FIXED | GMEM_ZEROINIT, sizeof(SORT_THREAD_PARAMS));
+    SORT_THREAD_PARAMS *pParams = (SORT_THREAD_PARAMS *)HeapAlloc(
+        GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(SORT_THREAD_PARAMS));
     ASSERT_VOID(pParams);
     Lock(hwnd);
     pParams->hWnd = hwnd;
     pParams->columnIndex = columnIndex;
     pParams->isAscending = isAscending;
-    _beginthread(SortThread, 0, pParams);
+    if (_beginthread(SortThread, 0, pParams) == -1) {
+        HeapFree(GetProcessHeap(), 0, pParams);
+        UnLock(hwnd);
+        return;
+    }
     UpdateStatus(IDS_SORT_START, gPhotoLib.iCount);
 }
 

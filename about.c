@@ -29,7 +29,7 @@ static void InitDialog(HWND hwnd)
     GetModuleFileName((HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), szPath, NELEMS(szPath));
     DWORD dwInfo;
     UINT size = GetFileVersionInfoSize(szPath, &dwInfo);
-    void *pInfo = GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, size);
+    void *pInfo = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
     ASSERT_VOID(pInfo);
     ASSERT_END(GetFileVersionInfo(szPath, dwInfo, size, pInfo));
     void *ptr;
@@ -56,7 +56,7 @@ static void InitDialog(HWND hwnd)
         Static_SetText(GetDlgItem(hwnd, IDD_WEBSITE), szBuf);
     }
 end:
-    GlobalFree(pInfo);
+    HeapFree(GetProcessHeap(), 0, pInfo);
 }
 
 /**

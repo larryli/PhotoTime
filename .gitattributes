@@ -1,0 +1,40 @@
+# Auto detect text files and perform LF normalization
+* text=auto eol=lf
+
+# Source code
+*.c text
+*.h text
+*.rc text
+*.xml text
+
+# Build files
+CMakeLists.txt text
+*.cmake text
+
+# Project files
+*.ppj text
+*.ppw text
+*.ppx text
+
+# Documentation
+*.md text
+*.txt text
+
+# Binary files
+*.exe binary
+*.dll binary
+*.obj binary
+*.o binary
+*.lib binary
+*.a binary
+
+# Images
+*.ico binary
+*.bmp binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+
+# Windows specific
+*.res binary
+*.tag binary
