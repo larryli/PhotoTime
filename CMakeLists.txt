@@ -7,22 +7,22 @@ endif()
 
 add_definitions(-DUNICODE -D_UNICODE)
 add_executable(PhotoTime WIN32
-    "about.c"
-    "commctrls.c"
-    "export.c"
-    "gdip.c"
-    "listview.c"
-    "main.c"
-    "main.rc"
-    "parsest.c"
-    "photo.c"
-    "photoview.c"
-    "statusbar.c"
-    "toolbar.c"
-    "utils.c")
+    "src/about.c"
+    "src/commctrls.c"
+    "src/export.c"
+    "src/gdip.c"
+    "src/listview.c"
+    "src/main.c"
+    "src/main.rc"
+    "src/parsest.c"
+    "src/photo.c"
+    "src/photoview.c"
+    "src/statusbar.c"
+    "src/toolbar.c"
+    "src/utils.c")
 target_link_libraries(PhotoTime comctl32 comdlg32 advapi32)
 
 add_definitions(-DTEST_PARSEST)
 add_executable(parsest
-    "parsest.c"
-    "utils.c")
+    "src/parsest.c"
+    "src/utils.c")

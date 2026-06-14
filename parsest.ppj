@@ -58,8 +58,8 @@ parsest.exe: \
 # Build parsest.obj.
 # 
 parsest\parsest.obj: \
-	parsest.c \
-	parsest.h \
+	src\parsest.c \
+	src\parsest.h \
 	utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
@@ -67,8 +67,8 @@ parsest\parsest.obj: \
 # Build utils.obj.
 # 
 parsest\utils.obj: \
-	utils.c \
-	utils.h
+	src\utils.c \
+	src\utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 .SILENT:

@@ -47,141 +47,141 @@ PhotoTime.exe: \
 # Build about.obj.
 # 
 output\about.obj: \
-	about.c \
-	about.h \
-	main.h \
-	utils.h
+	src\about.c \
+	src\about.h \
+	src\main.h \
+	src\utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
 # Build commctrls.obj.
 # 
 output\commctrls.obj: \
-	commctrls.c \
-	commctrls.h
+	src\commctrls.c \
+	src\commctrls.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
 # Build export.obj.
 # 
 output\export.obj: \
-	export.c \
-	export.h \
-	listview.h \
-	main.h \
-	utils.h
+	src\export.c \
+	src\export.h \
+	src\listview.h \
+	src\main.h \
+	src\utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
 # Build gdip.obj.
 # 
 output\gdip.obj: \
-	gdip.c \
-	gdip.h \
-	gdipimage.h \
-	utils.h
+	src\gdip.c \
+	src\gdip.h \
+	src\gdipimage.h \
+	src\utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
 # Build listview.obj.
 # 
 output\listview.obj: \
-	listview.c \
-	commctrls.h \
-	listview.h \
-	main.h \
-	photo.h \
-	utils.h
+	src\listview.c \
+	src\commctrls.h \
+	src\listview.h \
+	src\main.h \
+	src\photo.h \
+	src\utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
 # Build main.obj.
 # 
 output\main.obj: \
-	main.c \
-	about.h \
-	commctrls.h \
-	export.h \
-	gdip.h \
-	listview.h \
-	main.h \
-	photo.h \
-	photoview.h \
-	statusbar.h \
-	toolbar.h \
-	utils.h
+	src\main.c \
+	src\about.h \
+	src\commctrls.h \
+	src\export.h \
+	src\gdip.h \
+	src\listview.h \
+	src\main.h \
+	src\photo.h \
+	src\photoview.h \
+	src\statusbar.h \
+	src\toolbar.h \
+	src\utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
 # Build main.res.
 # 
 output\main.res: \
-	main.rc \
-	down.bmp \
-	main.h \
-	main.ico \
-	res1.xml \
-	toolbar.bmp \
-	up.bmp
+	src\main.rc \
+	src\res\down.bmp \
+	src\main.h \
+	src\res\main.ico \
+	src\res\res1.xml \
+	src\res\toolbar.bmp \
+	src\res\up.bmp
 	$(RC) $(RCFLAGS) "$!" -Fo"$@"
 
 # 
 # Build parsest.obj.
 # 
 output\parsest.obj: \
-	parsest.c \
-	parsest.h \
-	utils.h
+	src\parsest.c \
+	src\parsest.h \
+	src\utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
 # Build photo.obj.
 # 
 output\photo.obj: \
-	photo.c \
-	gdip.h \
-	parsest.h \
-	photo.h \
-	utils.h
+	src\photo.c \
+	src\gdip.h \
+	src\parsest.h \
+	src\photo.h \
+	src\utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
 # Build photoview.obj.
 # 
 output\photoview.obj: \
-	photoview.c \
-	gdip.h \
-	main.h \
-	photoview.h \
-	utils.h
+	src\photoview.c \
+	src\gdip.h \
+	src\main.h \
+	src\photoview.h \
+	src\utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
 # Build statusbar.obj.
 # 
 output\statusbar.obj: \
-	statusbar.c \
-	main.h \
-	statusbar.h \
-	utils.h
+	src\statusbar.c \
+	src\main.h \
+	src\statusbar.h \
+	src\utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
 # Build toolbar.obj.
 # 
 output\toolbar.obj: \
-	toolbar.c \
-	main.h \
-	toolbar.h \
-	utils.h
+	src\toolbar.c \
+	src\main.h \
+	src\toolbar.h \
+	src\utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
 # Build utils.obj.
 # 
 output\utils.obj: \
-	utils.c \
-	utils.h
+	src\utils.c \
+	src\utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 .EXCLUDEDFILES:
