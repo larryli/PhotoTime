@@ -26,9 +26,8 @@ Supports dragging and dropping folders from Explorer.
 ## Build
 
 ```powershell
-mkdir build && cd build
-cmake ..
-cmake --build .
+cmake -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DCMAKE_C_FLAGS_RELEASE="/MT /O2" -B build
+cmake --build build --config Release -j
 ```
 
 ## Documentation

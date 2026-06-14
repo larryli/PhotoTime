@@ -6,5 +6,5 @@
 POC_WORKSPACE_VERSION = 1.00
 
 PROJECT = PhotoTime.ppj
-PROJECT = parsest.ppj
+PROJECT = test_parsest.ppj
 

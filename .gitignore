@@ -58,10 +58,10 @@ dkms.conf
 *.ppx
 *.tag
 output/
-parsest/
 
 # VSCode
 .vscode/
 
 # CMake
 build/
+build_tests/

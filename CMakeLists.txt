@@ -21,8 +21,3 @@ add_executable(PhotoTime WIN32
     "src/toolbar.c"
     "src/utils.c")
 target_link_libraries(PhotoTime comctl32 comdlg32 advapi32)
-
-add_definitions(-DTEST_PARSEST)
-add_executable(parsest
-    "src/parsest.c"
-    "src/utils.c")

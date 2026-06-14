@@ -7,9 +7,9 @@ POC_PROJECT_VERSION = 9.00#
 POC_PROJECT_TYPE = 13#
 POC_PROJECT_MODE = Release#
 POC_PROJECT_RESULTDIR = .#
-POC_PROJECT_OUTPUTDIR = parsest#
+POC_PROJECT_OUTPUTDIR = output#
 !if "$(POC_PROJECT_MODE)" == "Release"
-CCFLAGS = -Tx64-coff -std:C17 -Ot -Ob1 -fp:precise -W1 -Gd -Ze -DUNICODE -D_UNICODE -DTEST_PARSEST#
+CCFLAGS = -Tx64-coff -std:C17 -Ot -Ob1 -fp:precise -W1 -Gd -Ze -DUNICODE -D_UNICODE#
 ASFLAGS = -AAMD64 -Gd#
 RCFLAGS = #
 LINKFLAGS = -machine:x64 -subsystem:console kernel32.lib advapi32.lib delayimp64.lib#
@@ -47,17 +47,26 @@ POC_PROJECT_ZIPEXTRA = #
 !endif
 
 # 
-# Build parsest.exe.
+# Build test_parsest.exe.
 # 
-parsest.exe: \
-	parsest\parsest.obj \
-	parsest\utils.obj
+test_parsest.exe: \
+	output\test_parsest.obj \
+	output\parsest.obj \
+	output\utils.obj
 	$(LINK) $(LINKFLAGS) -out:"$@" $**
+
+# 
+# Build test_parsest.obj.
+# 
+output\test_parsest.obj: \
+	tests\test_parsest.c \
+	src\parsest.h
+	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
 # Build parsest.obj.
 # 
-parsest\parsest.obj: \
+output\parsest.obj: \
 	src\parsest.c \
 	src\parsest.h \
 	src\utils.h
@@ -66,7 +75,7 @@ parsest\parsest.obj: \
 # 
 # Build utils.obj.
 # 
-parsest\utils.obj: \
+output\utils.obj: \
 	src\utils.c \
 	src\utils.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"

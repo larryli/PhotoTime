@@ -44,24 +44,35 @@ PhotoTime 是一个数字照片时间戳管理工具，用于批量处理照片�
 
 ## 编译
 
+### 环境要求
+
+- Windows SDK 10.0.26100.0
+- Visual Studio Build Tools 2022 (MSVC 14.51+)
+- CMake 3.10+
+
 ### CMake
 
 ```powershell
-# 创建构建目录
-mkdir build
-cd build
+# 配置（Release 模式，静态链接运行时）
+cmake -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DCMAKE_C_FLAGS_RELEASE="/MT /O2" -B build
 
-# 生成构建文件
-cmake ..
-
-# 编译项目
-cmake --build .
-
-# 编译测试程序
-cmake --build . --target parsest
+# 编译
+cmake --build build --config Release -j
 ```
 
-输出：`build/PhotoTime.exe`（主程序）或 `build/parsest.exe`（测试程序）
+输出：`build/Release/PhotoTime.exe`
+
+### 开发模式
+
+```powershell
+# 配置（Debug 模式）
+cmake -B build
+
+# 编译
+cmake --build build
+```
+
+输出：`build/Debug/PhotoTime.exe`
 
 ## 项目结构
 
@@ -81,6 +92,9 @@ PhotoTime/
 │   ├── commctrls.c     # 通用控件辅助
 │   ├── utils.c         # 工具函数
 │   └── res/            # 资源文件
+├── tests/              # 单元测试目录
+│   ├── CMakeLists.txt  # 测试构建配置
+│   └── test_parsest.c  # 时间戳解析测试
 ├── CMakeLists.txt      # CMake 构建配置
 └── docs/               # 项目文档
 ```
@@ -147,8 +161,8 @@ PhotoTime/
    - 清晰的模块接口定义
 
 4. **测试支持**
-   - 提供独立的解析测试程序 (`parsest`)
-   - 使用 `TEST_PARSEST` 宏控制测试代码
+   - 使用独立的测试目录 (`tests/`)
+   - 单元测试覆盖核心解析功能
 
 ## API 参考
 
@@ -183,13 +197,23 @@ PhotoTime/
 ### 单元测试
 
 ```powershell
-# 编译测试程序
-cd build
-cmake --build . --target parsest
+# 配置测试项目
+cmake -B build_tests tests -G "NMake Makefiles"
 
-# 运行解析测试
-./parsest.exe
+# 编译测试
+cmake --build build_tests
+
+# 运行测试
+ctest --test-dir build_tests
 ```
+
+**注意**：需要在 Visual Studio Developer Command Prompt 中运行，或手动设置 MSVC 环境变量。
+
+### 测试覆盖
+
+| 测试文件 | 测试内容 |
+|----------|----------|
+| `test_parsest.c` | 时间戳解析功能，包括各种文件名格式、边界条件、错误处理 |
 
 ### 集成测试
 
