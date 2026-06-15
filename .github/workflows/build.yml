@@ -20,7 +20,7 @@ jobs:
     - name: Build Tests
       run: cmake --build ${{github.workspace}}/build_tests --config Release -j
     - name: Run Tests
-      run: ctest --test-dir ${{github.workspace}}/build_tests --config Release
+      run: ctest --test-dir ${{github.workspace}}/build_tests --build-config Release
     - name: Configure
       run: cmake -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DCMAKE_C_FLAGS_RELEASE="/MT /O2" -B ${{github.workspace}}/build
     - name: Build
