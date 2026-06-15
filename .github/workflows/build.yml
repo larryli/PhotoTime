@@ -15,6 +15,12 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+    - name: Configure Tests
+      run: cmake -B ${{github.workspace}}/build_tests -S ${{github.workspace}}/tests
+    - name: Build Tests
+      run: cmake --build ${{github.workspace}}/build_tests --config Release -j
+    - name: Run Tests
+      run: ctest --test-dir ${{github.workspace}}/build_tests --config Release
     - name: Configure
       run: cmake -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DCMAKE_C_FLAGS_RELEASE="/MT /O2" -B ${{github.workspace}}/build
     - name: Build
