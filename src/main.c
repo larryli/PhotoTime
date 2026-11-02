@@ -43,6 +43,10 @@
 #define WM_OPENDIR_DONE (WM_USER + 2)
 #define WM_RELOAD_DONE (WM_USER + 3)
 
+#ifndef WM_DPICHANGED
+#define WM_DPICHANGED 0x02E0
+#endif
+
 #define ID_TIMER_OPENDIR 1
 #define ID_TIMER_RELOAD 2
 #define ID_TIMER_AUTOPROC 3
@@ -61,6 +65,7 @@ static void Main_OnContextMenu(HWND, HWND, UINT, UINT);
 static void Main_OnDestroy(HWND);
 static void Main_OnTimer(HWND, UINT_PTR);
 static void Main_OnDropFiles(HWND, HDROP);
+static void Main_OnDpiChanged(HWND, WPARAM, LPARAM);
 
 static void Main_OnSortStart(HWND, int, BOOL);
 static void Main_OnSortDone(HWND);
@@ -234,6 +239,8 @@ static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
     HANDLE_MSG(hwnd, WM_MOUSEMOVE, Main_OnMouseMove);
     HANDLE_MSG(hwnd, WM_TIMER, Main_OnTimer);
     HANDLE_MSG(hwnd, WM_DROPFILES, Main_OnDropFiles);
+    case WM_DPICHANGED:
+        return Main_OnDpiChanged(hwnd, wParam, lParam), 0;
     case WM_SETFOCUS:
         return SetFocus(ghWndListView), 0;
     case WM_SORT_START:
@@ -1083,6 +1090,49 @@ static void Main_OnDropFiles(HWND hwnd, HDROP hdrop)
         }
     }
     DragFinish(hdrop);
+}
+
+/**
+ * @brief Handle the WM_DPICHANGED message
+ *
+ * This function rebuilds the toolbar when the window's DPI changes (e.g. moving
+ * to a different monitor or changing the scale setting) so that the toolbar icons
+ * match the new DPI bucket (16x16 vs 32x32). After rebuilding, the button enabled
+ * state is restored from the current lock/photo state, and the suggested window
+ * rectangle is applied (which re-lays-out all child windows via WM_SIZE).
+ *
+ * @param hwnd Handle to the window
+ * @param wParam LOWORD = new X DPI, HIWORD = new Y DPI
+ * @param lParam Pointer to a RECT with the recommended window position/size
+ */
+static void Main_OnDpiChanged(HWND hwnd, WPARAM wParam, LPARAM lParam)
+{
+    RECT *pRect = (RECT *)lParam;
+
+    if (ghWndToolBar)
+        DestroyWindow(ghWndToolBar);
+    ghWndToolBar = CreateToolBarWnd(hwnd, ghInstance);
+
+    /* Restore the toolbar button enabled state. */
+    if (bLock) {
+        ToolBar_EnableButton(ghWndToolBar, IDM_OPEN, FALSE);
+        ToolBar_EnableButton(ghWndToolBar, IDM_RELOAD, FALSE);
+        ToolBar_EnableButton(ghWndToolBar, IDM_AUTOPROC, FALSE);
+    } else if (gPhotoLib.iCount > 0 && gPhotoLib.pPhotos) {
+        ToolBar_EnableButton(ghWndToolBar, IDM_OPEN, TRUE);
+        ToolBar_EnableButton(ghWndToolBar, IDM_RELOAD, TRUE);
+        ToolBar_EnableButton(ghWndToolBar, IDM_AUTOPROC, TRUE);
+    } else {
+        ToolBar_EnableButton(ghWndToolBar, IDM_OPEN, TRUE);
+        ToolBar_EnableButton(ghWndToolBar, IDM_RELOAD, FALSE);
+        ToolBar_EnableButton(ghWndToolBar, IDM_AUTOPROC, FALSE);
+    }
+
+    /* Apply the recommended window rect; this also triggers WM_SIZE re-layout. */
+    SetWindowPos(hwnd, NULL,
+                 pRect->left, pRect->top,
+                 pRect->right - pRect->left, pRect->bottom - pRect->top,
+                 SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
 typedef struct {
