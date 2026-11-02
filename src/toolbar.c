@@ -29,11 +29,22 @@ HWND CreateToolBarWnd(HWND hWndParent, HINSTANCE hInst)
                                  NULL);
     ASSERT_NULL(hWndTB);
     SendMessage(hWndTB, TB_BUTTONSTRUCTSIZE, (WPARAM) sizeof(TBBUTTON), 0);
+
+    /* Pick icon size from current DPI: 32x32 when scaled up, else 16x16. */
+    HDC hdc = GetDC(hWndParent);
+    int dpi = hdc ? GetDeviceCaps(hdc, LOGPIXELSX) : 96;
+    if (hdc) ReleaseDC(hWndParent, hdc);
+    int imgSize = (dpi >= 120) ? 32 : 16;
+    UINT bmpId = (imgSize == 32) ? IDR_BMP_TOOLBAR32 : IDR_BMP_TOOLBAR;
+
+    SendMessage(hWndTB, TB_SETBITMAPSIZE, 0, MAKELONG(imgSize, imgSize));
+    SendMessage(hWndTB, TB_SETBUTTONSIZE, 0, MAKELONG(imgSize + 7, imgSize + 6));
+
     TBADDBITMAP tbab = {
         .hInst = 0,
-        .nID = (UINT_PTR)LoadImage(hInst, MAKEINTRESOURCE(IDR_BMP_TOOLBAR),IMAGE_BITMAP, 0, 0, LR_LOADMAP3DCOLORS),
+        .nID = (UINT_PTR)LoadImage(hInst, MAKEINTRESOURCE(bmpId), IMAGE_BITMAP, 0, 0, LR_LOADMAP3DCOLORS),
     };
-    SendMessage(hWndTB, TB_ADDBITMAP, (WPARAM)1, (LPARAM)&tbab);
+    SendMessage(hWndTB, TB_ADDBITMAP, (WPARAM)4, (LPARAM)&tbab);
     TBBUTTON tbb[] = {
         {.fsStyle = TBSTYLE_SEP},
         {.iBitmap = 0, .idCommand = IDM_OPEN, .fsState = TBSTATE_ENABLED, .fsStyle = TBSTYLE_BUTTON},
